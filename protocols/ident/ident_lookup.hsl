@@ -1,19 +1,19 @@
 function ident_lookup($senderip, $senderport, $serverip, $serverport, $opts = [])
 {
-		$socket = Socket(strpos($senderip, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
-		if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
-		if (!$socket->bind($serverip)) return;
-		if (!$socket->connect($senderip, number($opts["port"] ?? 113))) return;
-		if (!$socket->send("$senderport, $serverport\r\n")) return;
-		if (!$resp = $socket->recv(8192)) return;
-		if (!$resp = pcre_match(''^\s*(?<senderport>[0-9]{1,5})\s*,\s*(?<serverport>[0-9]{1,5})\s*:\s*(?<replytype>USERID|ERROR)\s*:\s*(?<addinfo>.*?)\s*$'', $resp)) return;
-		if (number($resp["senderport"]) != $senderport or number($resp["serverport"]) != $serverport) return;
-		if ($resp["replytype"] == "USERID") {
-				if (!$userid = pcre_match(''^(?<ostype>.*?)\s*:\s*(?<username>.*?)$'', $resp["addinfo"])) return;
-				return ["ostype" => $userid["ostype"], "username" => $userid["username"]];
-		}
-		if ($resp["replytype"] == "ERROR") {
-				return ["error" => $resp["addinfo"]];
-		}
-		return;
+	$socket = Socket(strpos($senderip, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
+	if (!$socket->bind($serverip)) return;
+	if (!$socket->connect($senderip, number($opts["port"] ?? 113))) return;
+	if (!$socket->send("$senderport, $serverport\r\n")) return;
+	if (!$resp = $socket->recv(8192)) return;
+	if (!$resp = pcre_match(''^\s*(?<senderport>[0-9]{1,5})\s*,\s*(?<serverport>[0-9]{1,5})\s*:\s*(?<replytype>USERID|ERROR)\s*:\s*(?<addinfo>.*?)\s*$'', $resp)) return;
+	if (number($resp["senderport"]) != $senderport or number($resp["serverport"]) != $serverport) return;
+	if ($resp["replytype"] == "USERID") {
+		if (!$userid = pcre_match(''^(?<ostype>.*?)\s*:\s*(?<username>.*?)$'', $resp["addinfo"])) return;
+		return ["ostype" => $userid["ostype"], "username" => $userid["username"]];
+	}
+	if ($resp["replytype"] == "ERROR") {
+		return ["error" => $resp["addinfo"]];
+	}
+	return;
 }
