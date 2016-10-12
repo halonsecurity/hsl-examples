@@ -36,5 +36,5 @@ function geoip($senderip)
         }
         return $lst[$mid][2];
     }
-    return "";
+    return;
 }
