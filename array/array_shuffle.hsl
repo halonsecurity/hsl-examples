@@ -1,0 +1,14 @@
+// Knuth shuffle (O(n))
+function array_shuffle($l)
+{
+	foreach (range(1, count($l) - 1) as $i)
+	{
+		$r = rand(0, $i);
+		if ($r != $i) {
+			$t = $l[$r];
+			$l[$r] = $l[$i];
+			$l[$i] = $t;
+		}
+	}
+	return $l;
+}
