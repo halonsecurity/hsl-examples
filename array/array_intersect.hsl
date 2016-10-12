@@ -1,0 +1,8 @@
+function array_intersect($list1, $list2)
+{
+	$list3 = [];
+	foreach ($list1 as $k => $i)
+		if (in_array(string($i), $list2))
+			$list3[$k] = $i;
+	return $list3;
+}
