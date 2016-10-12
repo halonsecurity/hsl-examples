@@ -8,7 +8,7 @@ function array_sort($l)
 		foreach (array_reverse(range(-1, $j)) as $j)
 		{
 			if ($j < 0 or $l[$j] <= $k)
- 				break;
+				break;
 			$l[$j + 1] = $l[$j];
 		}
 		$l[$j + 1] = $k;

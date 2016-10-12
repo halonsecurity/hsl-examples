@@ -1,40 +1,42 @@
 function ip2long($ip)
 {
-    $ip = explode(".", $ip);
-    return (number($ip[0]) * 256 ** 3) +
-           (number($ip[1]) * 256 ** 2) +
-           (number($ip[2]) * 256 ** 1) +
-           (number($ip[3]) * 256 ** 0);
+	$ip = explode(".", $ip);
+	return (number($ip[0]) * 256 ** 3) +
+		(number($ip[1]) * 256 ** 2) +
+		(number($ip[2]) * 256 ** 1) +
+		(number($ip[3]) * 256 ** 0);
 }
 
 function geoip_object()
 {
-    $object = file("file://GeoIPCountryWhois.csv");
-    foreach ($object as $k => $x) {
-        $x = explode(",", $x);
-        $object[$k] = [number($x[2][1:-1]), number($x[3][1:-1]), $x[5][1:-1]];
-    }
-    return $object;
+	$object = file("file://GeoIPCountryWhois.csv");
+	foreach ($object as $k => $x)
+	{
+		$x = explode(",", $x);
+		$object[$k] = [number($x[2][1:-1]), number($x[3][1:-1]), $x[5][1:-1]];
+	}
+	return $object;
 }
 
 function geoip($senderip)
 {
-    $ip = ip2long($senderip);
-    $lst = cache [] geoip_object();
-    $min = 0;
-    $max = count($lst);
-    $log = log($max, 2);
-    foreach (range(0, $log) as $i) {
-        $mid = floor(($min + $max) / 2);
-        if ($ip > $lst[$mid][1]) {
-            $min = $mid;
-            continue;
-        }
-        if ($ip < $lst[$mid][0]) {
-            $max = $mid;
-            continue;
-        }
-        return $lst[$mid][2];
-    }
-    return;
+	$ip = ip2long($senderip);
+	$lst = cache [] geoip_object();
+	$min = 0;
+	$max = count($lst);
+	$log = log($max, 2);
+	foreach (range(0, $log) as $i)
+	{
+		$mid = floor(($min + $max) / 2);
+		if ($ip > $lst[$mid][1]) {
+			$min = $mid;
+			continue;
+		}
+		if ($ip < $lst[$mid][0]) {
+			$max = $mid;
+			continue;
+		}
+		return $lst[$mid][2];
+	}
+	return;
 }
