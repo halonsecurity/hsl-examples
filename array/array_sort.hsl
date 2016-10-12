@@ -1,0 +1,17 @@
+// Insert sort (O(n^2))
+function array_sort($l)
+{
+	foreach (range(1, count($l) - 1) as $i)
+	{
+		$k = $l[$i];
+		$j = $i - 1;
+		foreach (array_reverse(range(-1, $j)) as $j)
+		{
+			if ($j < 0 or $l[$j] <= $k)
+ 				break;
+			$l[$j + 1] = $l[$j];
+		}
+		$l[$j + 1] = $k;
+	}
+	return $l;
+}
