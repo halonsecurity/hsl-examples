@@ -1,0 +1,69 @@
+function Memcached($address, $opts = [])
+{
+	$socket = Socket(strpos($address, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
+	if (!$socket->connect($address, number($opts["port"] ?? 11211))) return;
+
+	$store = function ($command, $key, $flags, $exptime, $value) closure ($socket) {
+			$bytes = strlen($value);
+			if (!$socket->send("$command $key $flags $exptime $bytes\r\n$value\r\n")) return;
+			if (!$resp = $socket->recv(8192)) return;
+			$resp = trim($resp);
+			return $resp == "STORED";
+	};
+
+	$fetch = function ($command, $key) closure ($socket) {
+			if (!$socket->send("$command $key\r\n")) return;
+			$data = "";
+			while (true)
+			{
+				if (!$resp = $socket->recv(8192)) return;
+				$data .= $resp;
+				if ($data[-5:] == "END\r\n")
+					break;
+			}
+			$values = [];
+			$offset = 0;
+			while ($offset < strlen($data)) {
+				$lineEnd = strpos($data, "\r\n", $offset) - $offset;
+				$line = substr($data, $offset, $lineEnd);
+				[$type, $key, $flags, $length] = explode(" ", $line);
+				if ($type != "VALUE") break;
+				$offset += $lineEnd + 2;
+				$values[] = substr($data, $offset, $length);
+				$offset += number($length) + 2;
+			}
+			return $values;
+	};
+
+	$delete = function ($key) closure ($socket) {
+			if (!$socket->send("delete $key\r\n")) return;
+			if (!$resp = $socket->recv(8192)) return;
+			$resp = trim($resp);
+			return $resp == "DELETED";
+	};
+
+	return object [
+		"set" => function ($key, $value, $flags = 0, $exptime = 0) closure ($store) {
+			return $store("set", $key, $flags, $exptime, $value);
+		},
+		"add" => function ($key, $value, $flags = 0, $exptime = 0) closure ($store) {
+			return $store("add", $key, $flags, $exptime, $value);
+		},
+		"replace" => function ($key, $value, $flags = 0, $exptime = 0) closure ($store) {
+			return $store("replace", $key, $flags, $exptime, $value);
+		},
+		"append" => function ($key, $value, $flags = 0, $exptime = 0) closure ($store) {
+			return $store("append", $key, $flags, $exptime, $value);
+		},
+		"prepend" => function ($key, $value, $flags = 0, $exptime = 0) closure ($store) {
+			return $store("prepend", $key, $flags, $exptime, $value);
+		},
+		"get" => function ($key) closure ($fetch) {
+			return $fetch("get", $key);
+		},
+		"delete" => function ($key) closure ($delete) {
+			return $delete($key);
+		},
+	];
+}
