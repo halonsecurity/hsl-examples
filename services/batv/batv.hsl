@@ -1,0 +1,31 @@
+function batv_sign($sender, $key, $opts = [])
+{
+    $id = isset($opts["keyid"]) ? $opts["keyid"] : 0;
+    $days = isset($opts["days"]) ? $opts["days"] : 7;
+    $exp = string(floor(time() / (3600 * 24)) + $days % 1000)[-3:];
+    $secret = hmac_sha1($key, $id.$exp.$sender)[:6];
+    return "prvs=$id$exp$secret=$sender";
+}
+
+function batv_verify($sender, $keys, $opts = [])
+{
+    $days = isset($opts["days"]) ? $opts["days"] : 7;
+    if ($sender[0:5] != "prvs=") return "missing";
+    if ($sender[15] != "=") return "invalid";
+    $id = $sender[5];
+    if (!isset($keys[$id])) return "invalid";
+    $exp = number($sender[6:9]);
+    $secret = hmac_sha1($keys[$id], $id.$exp.$sender[16:])[:6];
+    if ($secret != $sender[9:15]) return "checksum";
+    $cur = floor(time() / (3600 * 24)) % 1000;
+    if ($exp < $days and $cur >= 1000 - 7) $cur = 0;
+    if ($exp < $cur) return "expired";
+    return "pass";
+}
+
+function batv_strip($sender)
+{
+    if ($sender[0:5] != "prvs=") return $sender;
+    if ($sender[15] != "=") return $sender;
+    return $sender[16:];
+}
