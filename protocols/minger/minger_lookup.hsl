@@ -1,0 +1,33 @@
+function hex_decode($input)
+{
+	$result = "";
+	$i = 0;
+
+	while ($i < strlen($input))
+	{
+		$result .= chr(number("0x". $input[$i:$i + 2]));
+		$i += 2;
+	}
+
+	return $result;
+}
+
+function minger_lookup($host, $address, $opts = [])
+{
+	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_DGRAM");
+	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return -1;
+	if (!$socket->connect($host, number($opts["port"] ?? 4069))) return -1;
+
+	$query = $address;
+	if (isset($opts["secret"]))
+		$query .= " d=" . base64_encode(hex_decode(md5($opts["secret"] . ":" . $address)));
+
+	if (!$socket->send($query)) return;
+	if (!$response = $socket->recv(1024)) return;
+
+	[$address2, $status] = explode(" ", $response);
+	if ($address2 != $address)
+		return;
+
+	return number($status);
+}
