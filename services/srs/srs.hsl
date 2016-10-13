@@ -1,0 +1,63 @@
+function SRS_forward($sender, $alias, $opts = [])
+{
+    $secret = isset($opts["secret"]) ? $opts["secret"] : "";
+    $hashlen = isset($opts["hashlen"]) ? $opts["hashlen"] : 4;
+
+    $part = explode("@", $sender);
+    $days = floor(time() / 86400);
+    $base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    $time = $base32[bitand(floor($days / 32), 31)].$base32[bitand($days, 31)];
+    $key = hmac_sha1_base64($secret, strtolower($time.$part[1].$part[0]));    
+    return "SRS0=".$key[0:$hashlen]."=$time=".$part[1]."=".$part[0]."@$alias";
+}
+
+function SRS_reverse($address, $opts = [])
+{
+    $secret = isset($opts["secret"]) ? $opts["secret"] : "";
+    $hashlen = isset($opts["hashlen"]) ? $opts["hashlen"] : 4;
+    $maxage = isset($opts["maxage"]) ? $opts["maxage"] : 21;
+
+    if (strtolower($address[0:5]) != "srs0=") return "";
+    $part = explode("=", explode("@", $address)[0]);
+    if (count($part) < 5) return "";
+
+    $key = hmac_sha1_base64($secret, strtolower($part[2].$part[3].implode("=", $part[4:])));
+    if (strtolower($key[0:$hashlen]) != strtolower($part[1])) return "";
+
+    if (strlen($part[2]) != 2) return "";
+    $days = 0;
+    $base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    foreach(range(0, 1) as $i)
+    {
+        $pos = strpos($base32, strtoupper($part[2])[$i]);
+        if ($pos == -1) return "";
+        $days = $days * strlen($base32) + $pos;
+    }
+    $now = floor(time() / 86400) % (32 ** 2);
+    if ($now < $days) $now += (32 ** 2);
+    if ($now > $days + $maxage) return "";
+
+    return implode("=", $part[4:])."@".$part[3];
+}
+
+function hmac_sha1_base64($key, $message)
+{
+    $hash = hmac_sha1($key, $message);
+    $raw = "";
+    foreach(range(0, strlen($hash) - 1, 2) as $i)
+        $raw .= chr(number("0x".$hash[$i:$i+2]));
+    return base64_encode($raw);
+}
+
+function bitand($a, $b)
+{
+    $result = 0;
+    foreach (range(0, 31) as $x)
+    {
+        if ($a % 2 and $b % 2)
+            $result += 2 ** $x;
+        $a = floor($a / 2);
+        $b = floor($b / 2);
+    }
+    return $result;
+}
