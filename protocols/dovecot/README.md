@@ -9,7 +9,7 @@ Try to authenticate the username against a dovecot server.
 
 **Returns**: 1 if the authentication succeeded, 0 if the authentication failed and -1 if an error occurred.
 
-The following options are available in the options array.
+The following options are available in the **options** array.
 
 - host `string` - IP-address or hostname of the dovecot server. required
 - port `number` - TCP port. required
