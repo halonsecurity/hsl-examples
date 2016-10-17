@@ -1,0 +1,8 @@
+function array_unique($array)
+{
+	return array_reduce(
+		function ($carry, $value) {
+			if (!in_array($value, $carry)) $carry[] = $value;
+			return $carry;
+		}, $array, []);
+}
