@@ -1,4 +1,4 @@
-#ident_lookup(senderip, senderport, serverip, serverport[, options])
+##ident_lookup(senderip, senderport, serverip, serverport[, options])
 Try to lookup the username of the connecting client using the ident (rfc1413) protocol.
 
 **Params**
