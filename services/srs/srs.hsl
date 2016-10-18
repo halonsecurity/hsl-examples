@@ -27,7 +27,7 @@ function SRS_reverse($address, $opts = [])
 	if (strlen($part[2]) != 2) return "";
 	$days = 0;
 	$base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-	foreach(range(0, 1) as $i)
+	foreach (range(0, 1) as $i)
 	{
 		$pos = strpos($base32, strtoupper($part[2])[$i]);
 		if ($pos == -1) return "";
@@ -44,7 +44,7 @@ function hmac_sha1_base64($key, $message)
 {
 	$hash = hmac_sha1($key, $message);
 	$raw = "";
-	foreach(range(0, strlen($hash) - 1, 2) as $i)
+	foreach (range(0, strlen($hash) - 1, 2) as $i)
 		$raw .= chr(number("0x".$hash[$i:$i+2]));
 	return base64_encode($raw);
 }
