@@ -27,11 +27,13 @@ function SRS_reverse($address, $opts = [])
 	if (strlen($part[2]) != 2) return "";
 	$days = 0;
 	$base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-	foreach (range(0, 1) as $i)
+	$i = 0;
+	while ($i <= 1)
 	{
 		$pos = strpos($base32, strtoupper($part[2])[$i]);
 		if ($pos == -1) return "";
 		$days = $days * strlen($base32) + $pos;
+		$i += 1;
 	}
 	$now = floor(time() / 86400) % (32 ** 2);
 	if ($now < $days) $now += (32 ** 2);
@@ -44,20 +46,27 @@ function hmac_sha1_base64($key, $message)
 {
 	$hash = hmac_sha1($key, $message);
 	$raw = "";
-	foreach (range(0, strlen($hash) - 1, 2) as $i)
+	$len = strlen($hash);
+	$i = 0;
+	while ($i < $len)
+	{
 		$raw .= chr(number("0x".$hash[$i:$i+2]));
+		$i += 2;
+	}
 	return base64_encode($raw);
 }
 
 function bitand($a, $b)
 {
 	$result = 0;
-	foreach (range(0, 31) as $x)
+	$x = 0;
+	while ($x <= 31)
 	{
 		if ($a % 2 and $b % 2)
 			$result += 2 ** $x;
 		$a = floor($a / 2);
 		$b = floor($b / 2);
+		$x += 1;
 	}
 	return $result;
 }

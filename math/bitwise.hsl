@@ -1,12 +1,14 @@
 function bitand($a, $b)
 {
 	$result = 0;
-	foreach (range(0, 31) as $x)
+	$x = 0;
+	while ($x <= 31)
 	{
 		if ($a % 2 and $b % 2)
 			$result += 2 ** $x;
 		$a = floor($a / 2);
 		$b = floor($b / 2);
+		$x += 1;
 	}
 	return $result;
 }
@@ -14,12 +16,14 @@ function bitand($a, $b)
 function bitor($a, $b)
 {
 	$result = 0;
-	foreach (range(0, 31) as $x)
+	$x = 0;
+	while ($x <= 31)
 	{
 		if ($a % 2 or $b % 2)
 			$result += 2 ** $x;
 		$a = floor($a / 2);
 		$b = floor($b / 2);
+		$x += 1;
 	}
 	return $result;
 }
@@ -27,12 +31,14 @@ function bitor($a, $b)
 function bitxor($a, $b)
 {
 	$result = 0;
-	foreach (range(0, 31) as $x)
+	$x = 0;
+	while ($x <= 31)
 	{
 		if ($a % 2 + $b % 2 == 1)
  			$result += 2 ** $x;
 		$a = floor($a / 2);
 		$b = floor($b / 2);
+		$x += 1;
 	}
 	return $result;
 }
@@ -40,11 +46,13 @@ function bitxor($a, $b)
 function bitnot($a)
 {
 	$result = 0;
-	foreach (range(0, 31) as $x)
+	$x = 0;
+	while ($x <= 31)
 	{
 		if ($a % 2 == 0)
 			$result += 2 ** $x;
 		$a = floor($a / 2);
+		$x += 1;
 	}
 	return $result;
 }

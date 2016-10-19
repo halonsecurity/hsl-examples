@@ -25,15 +25,18 @@ function geoip($senderip)
 	$min = 0;
 	$max = count($lst);
 	$log = log($max, 2);
-	foreach (range(0, $log) as $i)
+	$i = 0;
+	while ($i <= $log)
 	{
 		$mid = floor(($min + $max) / 2);
 		if ($ip > $lst[$mid][1]) {
 			$min = $mid;
+			$i += 1;
 			continue;
 		}
 		if ($ip < $lst[$mid][0]) {
 			$max = $mid;
+			$i += 1;
 			continue;
 		}
 		return $lst[$mid][2];
