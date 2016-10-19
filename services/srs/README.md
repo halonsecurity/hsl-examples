@@ -1,3 +1,1 @@
-A [Mail::SRS](http://search.cpan.org/perldoc?Mail::SRS) compatible sender rewrite scheme using HSL. 
-
-Our [SRS](http://wiki.halon.se/SRS) documentation shows how to implement this code.
+This example provides a [Mail::SRS](http://search.cpan.org/perldoc?Mail::SRS) compatible sender rewrite scheme implementation, our [documentation](http://wiki.halon.se/SRS) shows how to implement it properly.
