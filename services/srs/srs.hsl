@@ -6,7 +6,7 @@ function SRS_forward($sender, $alias, $opts = [])
 	$part = explode("@", $sender);
 	$days = floor(time() / 86400);
 	$base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-	$time = $base32[bitand(floor($days / 32), 31)].$base32[bitand($days, 31)];
+	$time = $base32[floor($days / 32) & 31].$base32[$days & 31)];
 	$key = hmac_sha1_base64($secret, strtolower($time.$part[1].$part[0]));    
 	return "SRS0=".$key[0:$hashlen]."=$time=".$part[1]."=".$part[0]."@$alias";
 }
@@ -54,19 +54,4 @@ function hmac_sha1_base64($key, $message)
 		$i += 2;
 	}
 	return base64_encode($raw);
-}
-
-function bitand($a, $b)
-{
-	$result = 0;
-	$x = 0;
-	while ($x <= 31)
-	{
-		if ($a % 2 and $b % 2)
-			$result += 2 ** $x;
-		$a = floor($a / 2);
-		$b = floor($b / 2);
-		$x += 1;
-	}
-	return $result;
 }
