@@ -15,10 +15,10 @@ https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/Halo
 
 ![logo](https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/Halon%3Auser@example.com%3Fsecret=ABCDEFGHIJKLMNOP%26issuer=Halon)
 
-One implementation could be to require the TOTP token to be appended before the password.
+One implementation could be to require the TOTP token to be appended after the password.
 
 ```
-if (totp($secret) == $password[0:6] && $password[6:] == "password")
+if ($password[0:-6] == "password" && totp($secret) == $password[-6:])
 {
   Authenticate();
 }
