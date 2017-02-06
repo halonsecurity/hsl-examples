@@ -9,7 +9,7 @@ Generate a random 16 byte long base32-encoded secret:
 $secret = "ABCDEFGHIJKLMNOP";
 ```
 
-Go to the URL and scan the QR code in Google Authenticator.
+Go to the URL and scan the [QR code](https://github.com/google/google-authenticator/wiki/Key-Uri-Format) in Google Authenticator.
 
 https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/Halon%3Auser@example.com%3Fsecret=ABCDEFGHIJKLMNOP%26issuer=Halon
 
