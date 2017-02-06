@@ -1,9 +1,9 @@
-This Time-based One-time Password Algorithm (TOTP) implementation can be used with eg. Google Authenticator.
+This Time-based One-time Password Algorithm (TOTP) implementation can be used with eg. [Google Authenticator](https://en.wikipedia.org/wiki/Google_Authenticator).
 
 Usage example
 -------------
 
-Generate a random 16 byte long base32-encoded secret, 
+Generate a random 16 byte long base32-encoded secret:
 
 ```
 $secret = "ABCDEFGHIJKLMNOP";
