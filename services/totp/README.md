@@ -11,9 +11,9 @@ $secret = "ABCDEFGHIJKLMNOP";
 
 Go to the URL and scan the QR code in Google Authenticator.
 
-https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/user@example.com?secret=ABCDEFGHIJKLMNOP&issuer=Halon
+https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/Halon%3Auser@example.com%3Fsecret=ABCDEFGHIJKLMNOP%26issuer=Halon
 
-![logo](https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/user@example.com?secret=ABCDEFGHIJKLMNOP&issuer=Halon)
+![logo](https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/Halon%3Auser@example.com%3Fsecret=ABCDEFGHIJKLMNOP%26issuer=Halon)
 
 One implementation could be to require the TOTP token to be appended before the password.
 
