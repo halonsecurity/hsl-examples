@@ -1,0 +1,13 @@
+function totp($secret)
+{
+	$key = base32_decode($secret);
+	$message = floor(time() / 30);
+	$message = "\x00\x00\x00\x00".
+			chr($message >> 24 & 0xff).
+			chr($message >> 16 & 0xff).
+			chr($message >> 8 & 0xff).
+			chr($message & 0xff);
+	$hash = hmac_sha1($key, $message);
+	$offset = (number("0x".$hash[-2:]) & 0xf) * 2;
+	return ("00000".(number("0x".$hash[$offset:$offset + 8]) & 0x7FFFFFFF) % (10 ** 6))[-6:];
+}
