@@ -3,7 +3,7 @@ This Time-based One-time Password Algorithm (TOTP) implementation [rfc6238](http
 Usage example
 -------------
 
-Generate a random 16 byte long base32-encoded secret:
+Generate a random 16 byte long base32-encoded secret (the one below should not be used in production):
 
 ```
 $secret = "ABCDEFGHIJKLMNOP";
