@@ -18,7 +18,8 @@ https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/Halo
 One implementation could be to require the TOTP token to be appended after the password.
 
 ```
-if ($username == "totpuser" and $password[0:-6] == "password" and totp(base32_decode($secret)) == $password[-6:])
+if ($username == "totpuser" and
+    $password[0:-6] == "password" and totp(base32_decode($secret)) == $password[-6:])
 {
   Authenticate();
 }
