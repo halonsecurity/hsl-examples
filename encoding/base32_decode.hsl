@@ -1,0 +1,32 @@
+function base32_decode($input)
+{
+	$base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+	$b = 0;
+	$v = 0;
+	$result = "";
+
+	$i = 0;
+	$l = strlen($input);
+	while ($i < $l)
+	{
+		if ($input[$i] == "=")
+			break;
+
+		$char = strpos($base32, $input[$i]);
+		if ($char == -1)
+			return;
+
+		$v = ($v << 5) | $char;
+		$b += 5;
+
+		if ($b >= 8)
+		{
+			$result .= chr(($v >> ($b - 8)) & 0xff);
+			$b -= 8;
+		}
+		$i += 1;
+	}
+
+	return $result;
+}
