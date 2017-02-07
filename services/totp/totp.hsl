@@ -2,6 +2,7 @@ include_once "file:base32";
 
 function totp($secret)
 {
+	$digits = 6;
 	$key = base32_decode($secret);
 	$message = floor(time() / 30);
 	$message = "\x00\x00\x00\x00".
@@ -11,5 +12,5 @@ function totp($secret)
 			chr($message & 0xff);
 	$hash = hmac_sha1($key, $message);
 	$offset = (number("0x".$hash[-2:]) & 0xf) * 2;
-	return ("00000".(number("0x".$hash[$offset:$offset + 8]) & 0x7FFFFFFF) % (10 ** 6))[-6:];
+	return (str_repeat("0", $digits).(number("0x".$hash[$offset:$offset + 8]) & 0x7FFFFFFF) % (10 ** $digits))[-$digits:];
 }
