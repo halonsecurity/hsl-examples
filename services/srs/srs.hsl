@@ -1,7 +1,7 @@
 function SRS_forward($sender, $alias, $opts = [])
 {
-	$secret = isset($opts["secret"]) ? $opts["secret"] : "";
-	$hashlen = isset($opts["hashlen"]) ? $opts["hashlen"] : 4;
+	$secret = $opts["secret"] ?? "";
+	$hashlen = $opts["hashlen"] ?? 4;
 
 	$part = explode("@", $sender);
 	$days = floor(time() / 86400);
@@ -13,9 +13,9 @@ function SRS_forward($sender, $alias, $opts = [])
 
 function SRS_reverse($address, $opts = [])
 {
-	$secret = isset($opts["secret"]) ? $opts["secret"] : "";
-	$hashlen = isset($opts["hashlen"]) ? $opts["hashlen"] : 4;
-	$maxage = isset($opts["maxage"]) ? $opts["maxage"] : 21;
+	$secret = $opts["secret"] ?? "";
+	$hashlen = $opts["hashlen"] ?? 4;
+	$maxage = $opts["maxage"] ?? 21;
 
 	if (strtolower($address[0:5]) != "srs0=") return "";
 	$part = explode("=", explode("@", $address)[0]);
