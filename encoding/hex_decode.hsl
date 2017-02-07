@@ -1,9 +1,10 @@
 function hex_decode($input)
 {
 	$result = "";
+	
 	$i = 0;
-
-	while ($i < strlen($input))
+	$l = strlen($input);
+	while ($i < $l)
 	{
 		$result .= chr(number("0x". $input[$i:$i + 2]));
 		$i += 2;
