@@ -1,3 +1,5 @@
+include_once "file:base32";
+
 function totp($secret)
 {
 	$key = base32_decode($secret);
