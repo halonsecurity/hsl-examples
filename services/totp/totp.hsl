@@ -1,9 +1,5 @@
-include_once "file:base32";
-
-function totp($secret)
+function totp($key, $digits = 6)
 {
-	$digits = 6;
-	$key = base32_decode($secret);
 	$message = floor(time() / 30);
 	$message = "\x00\x00\x00\x00".
 			chr($message >> 24 & 0xff).
