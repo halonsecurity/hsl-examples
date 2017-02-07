@@ -1,7 +1,7 @@
 function totp($key, $opts = [])
 {
-	$digits = isset($opts["digits"]) ? $opts["digits"] : 6;
-	$index = isset($opts["index"]) ? $opts["index"] : 0;
+	$digits = $opts["digits"] ?? 6;
+	$index = $opts["index"] ?? 0;
 	
 	$message = floor(time() / 30) + $index;
 	$message = "\x00\x00\x00\x00".
