@@ -42,5 +42,5 @@ function httppost($opts, $fp)
 		$response .= $resp;
 
 	[$http, $status, $msg] = explode(" ", explode("\r\n", $response)[0]);
-  return $status;
+	return $status;
 }
