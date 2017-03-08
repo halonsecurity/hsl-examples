@@ -1,5 +1,5 @@
 ##httppost(options, fp)
-Try to authenticate the username against a dovecot server.
+Upload a File to a HTTP sever.
 
 **Params**
 
