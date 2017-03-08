@@ -1,0 +1,46 @@
+function httppost($opts, $fp)
+{
+	$host = $opts["host"];
+	$port = number($opts["port"] ?? 80);
+
+	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
+	if (!$socket->connect($host, $port)) return;
+
+	$uri = $opts["uri"] ?? "/";
+	$length = $fp->seek(0, "SEEK_END");
+	$fp->seek(0, "SEEK_SET");
+
+	$name = $opts["name"] ?? "file.ext";
+	$boundary = uuid();
+
+	$preamble = implode("\r\n", [
+			"--$boundary",
+			"Content-Disposition: form-data; name=\"file\"; filename=\"$name\"",
+			"Content-Type: application/octet-stream",
+			])."\r\n\r\n";
+	$postamble = "\r\n--$boundary--\r\n";
+
+	$length += strlen($preamble) + strlen($postamble);
+
+	if (!$socket->send(implode("\r\n", [
+			"POST $uri HTTP/1.0",
+			"Host: $host:$port",
+			"User-Agent: Halon HTTP client (HSL)",
+			"Content-Length: $length",
+			"Content-Type: multipart/form-data; boundary=$boundary",
+			])."\r\n\r\n")) return;
+
+	if (!$socket->send($preamble)) return;
+	while ($str = $fp->read(8192))
+		if (!$socket->send($str))
+			return;
+	if (!$socket->send($postamble)) return;
+
+	$response = "";
+	while ($resp = $socket->recv(8192))
+		$response .= $resp;
+
+	[$http, $status, $msg] = explode(" ", explode("\r\n", $response)[0]);
+  return $status;
+}
