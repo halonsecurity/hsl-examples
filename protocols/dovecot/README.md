@@ -1,4 +1,4 @@
-##dovecot_lookup_auth(options, username, password)
+## dovecot_lookup_auth(options, username, password)
 Try to authenticate the username against a dovecot server.
 
 **Params**
