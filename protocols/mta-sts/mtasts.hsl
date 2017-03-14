@@ -1,4 +1,4 @@
-function mta_sts_fetch_policy($policydomain, $dnspolicy)
+function mta_sts_fetch_policy($policydomain)
 {
 	$txt = dnstxt("mta-sts.$policydomain");
 	$sts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
