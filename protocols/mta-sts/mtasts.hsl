@@ -1,0 +1,46 @@
+function mta_sts_fetch_policy($policydomain, $dnspolicy)
+{
+	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.json", [
+		"ssl_verify_host" => true,
+		"ssl_default_ca" => true,
+		"connect_timeout" => 5,
+		"timeout" => 5,
+	]);
+	if (!is_string($res))
+		return;
+	$policy = json_decode($res);
+	if (!is_array($policy))
+		return;
+	if ($policy["version"] != "STSv1")
+		return;
+	return $policy;
+}
+
+function mta_sts($policydomain)
+{
+	$txt = dnstxt("mta-sts.$policydomain");
+	$sts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
+	if (count($sts) != 1)
+		return false;
+
+	return cache [
+			"ttl_function" => function ($x) {
+				if (is_array($x))
+					return $x["max_age"];
+				else
+					return 300;
+			},
+		] mta_sts_fetch_policy($policydomain, $sts[0]);
+}
+
+function mta_sts_filter_mx($mxlist, $policy)
+{
+	$mxfilter = $policy["mx"];
+	return array_filter(function ($mx) closure ($mxfilter) {
+			if (in_array($mx, $mxfilter))
+				return true;
+			if (in_array("*.".implode(".", explode(".", $mx)[1:]), $mxfilter))
+				return true;
+			return false;
+	}, $mxlist);
+}
