@@ -8,9 +8,9 @@ if (is_array($mtastspolicy)) {
 	$mx = mta_sts_filter_mx($mxlist, $mtastspolicy);
 
 	if (count($mx) == 0 and $mtastspolicy["mode"] == "enforce")
-		echo "$recipientdomain: Reschedule(No valid MX found)";
+		echo "MTA-STS: $recipientdomain: Reschedule(No valid MX found)";
 
-	echo "$recipientdomain: STS enabled ($mx)";
+	echo "MTA-STS: $recipientdomain: STS enabled ($mx)";
 	
 	/*
 	SetDestination($mx[0]);
@@ -22,7 +22,7 @@ if (is_array($mtastspolicy)) {
 	*/
 } else {
 	if (is_number($mtastspolicy) and !$mtastspolicy)
-		echo "$recipientdomain: No STS policy";
+		echo "MTA-STS: $recipientdomain: No STS policy";
 	else
-		echo "$recipientdomain: Reschedule(An error occurred)";
+		echo "MTA-STS: $recipientdomain: Reschedule(An error occurred)";
 }
