@@ -19,7 +19,7 @@ if (is_array($mtastspolicy)) {
 		"tls_default_ca" => true,
 		"tls" => "require_verify",
 	]);
-	*
+	*/
 } else {
 	if (is_number($mtastspolicy) and !$mtastspolicy)
 		echo "$recipientdomain: No STS policy";
