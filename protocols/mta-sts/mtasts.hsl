@@ -1,5 +1,10 @@
 function mta_sts_fetch_policy($policydomain, $dnspolicy)
 {
+	$txt = dnstxt("mta-sts.$policydomain");
+	$sts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
+	if (count($sts) != 1)
+		return false;
+
 	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.json", [
 		"ssl_verify_host" => true,
 		"ssl_default_ca" => true,
@@ -18,11 +23,6 @@ function mta_sts_fetch_policy($policydomain, $dnspolicy)
 
 function mta_sts($policydomain)
 {
-	$txt = dnstxt("mta-sts.$policydomain");
-	$sts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
-	if (count($sts) != 1)
-		return false;
-
 	return cache [
 			"ttl_function" => function ($x) {
 				if (is_array($x))
@@ -30,7 +30,7 @@ function mta_sts($policydomain)
 				else
 					return 300;
 			},
-		] mta_sts_fetch_policy($policydomain, $sts[0]);
+		] mta_sts_fetch_policy($policydomain);
 }
 
 function mta_sts_filter_mx($mxlist, $policy)
