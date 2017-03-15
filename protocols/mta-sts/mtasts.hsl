@@ -44,7 +44,7 @@ function mta_sts($policydomain)
 
     if (!$newSTS) {
         // no STS?
-        return;
+        return false;
     }
 
     $newPolicy = mta_sts_fetch_new_policy($policydomain);
@@ -60,8 +60,17 @@ function mta_sts($policydomain)
         $oldPolicy = $newPolicy;
     }
 
-	if (!$oldPolicy)
-		return false;
-
     return $oldPolicy;
+}
+
+function mta_sts_filter_mx($mxlist, $policy)
+{
+	$mxfilter = $policy["mx"];
+	return array_filter(function ($mx) closure ($mxfilter) {
+			if (in_array($mx, $mxfilter))
+				return true;
+			if (in_array("*.".implode(".", explode(".", $mx)[1:]), $mxfilter))
+				return true;
+			return false;
+	}, $mxlist);
 }
