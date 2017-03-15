@@ -1,46 +1,67 @@
-function mta_sts_fetch_policy($policydomain)
+function mta_sts_fetch_new_policy($policydomain)
 {
-	$txt = dnstxt("mta-sts.$policydomain");
-	$sts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
-	if (count($sts) != 1)
-		return false;
+    $res = http("https://mta-sts.$policydomain/.well-known/mta-sts.json", [
+        "ssl_verify_host" => true,
+        "ssl_default_ca" => true,
+        "connect_timeout" => 5,
+        "timeout" => 5,
+    ]); 
+    if (!is_string($res))
+        return;
+    $policy = json_decode($res);
+    if (!is_array($policy))
+        return;
+    if ($policy["version"] != "STSv1")
+        return;
+    return $policy;
+}
 
-	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.json", [
-		"ssl_verify_host" => true,
-		"ssl_default_ca" => true,
-		"connect_timeout" => 5,
-		"timeout" => 5,
-	]);
-	if (!is_string($res))
-		return;
-	$policy = json_decode($res);
-	if (!is_array($policy))
-		return;
-	if ($policy["version"] != "STSv1")
-		return;
-	return $policy;
+function mta_sts_cache($policydomain, $value)
+{
+    return $value;
 }
 
 function mta_sts($policydomain)
 {
-	return cache [
-			"ttl_function" => function ($x) {
-				if (is_array($x))
-					return $x["max_age"];
-				else
-					return 300;
-			},
-		] mta_sts_fetch_policy($policydomain);
-}
+    $cacheSize = 10000;
 
-function mta_sts_filter_mx($mxlist, $policy)
-{
-	$mxfilter = $policy["mx"];
-	return array_filter(function ($mx) closure ($mxfilter) {
-			if (in_array($mx, $mxfilter))
-				return true;
-			if (in_array("*.".implode(".", explode(".", $mx)[1:]), $mxfilter))
-				return true;
-			return false;
-	}, $mxlist);
+    $txt = dnstxt("mta-sts.$policydomain");
+    $newSTS = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
+    if (count($newSTS) != 1)
+        $newSTS = false;
+
+    [$oldSTS, $oldPolicy] = cache [
+                    "argv_filter" => [1],
+                    "size" => $cacheSize,
+                    "ttl" => 0, /* do no cache */
+                ] mta_sts_cache($policydomain, [/* cache miss value */]);
+
+    if ($oldPolicy)
+    {   
+        if (!$newSTS or $oldSTS == $newSTS)
+            return $oldPolicy;
+    }   
+
+    if (!$newSTS) {
+        // no STS?
+        return;
+    }
+
+    $newPolicy = mta_sts_fetch_new_policy($policydomain);
+    if ($newPolicy)
+    {
+        cache [
+            "argv_filter" => [1],
+            "size" => $cacheSize,
+            "ttl" => $newPolicy["max_age"],
+            "force" => true, /* renew policy */
+        ] mta_sts_cache($policydomain, [$newSTS, $newPolicy]); 
+
+        $oldPolicy = $newPolicy;
+    }
+
+	if (!$oldPolicy)
+		return false;
+
+    return $oldPolicy;
 }
