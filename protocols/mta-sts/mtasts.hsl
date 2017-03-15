@@ -67,10 +67,10 @@ function mta_sts_filter_mx($mxlist, $policy)
 {
 	$mxfilter = $policy["mx"];
 	return array_filter(function ($mx) closure ($mxfilter) {
-			if (in_array($mx, $mxfilter))
-				return true;
-			if (in_array("*.".implode(".", explode(".", $mx)[1:]), $mxfilter))
-				return true;
-			return false;
+		if (in_array($mx, $mxfilter))
+			return true;
+		if (in_array("*.".implode(".", explode(".", $mx)[1:]), $mxfilter))
+			return true;
+		return false;
 	}, $mxlist);
 }
