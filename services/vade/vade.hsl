@@ -7,6 +7,10 @@ function ScanVADE($opts)
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, number($opts["port"] ?? 8083))) return;
 
+	$exit = function() closure ($socket) {
+		$socket->shutdown("SHUT_RDWR");
+	};
+
 	$sendvparam = function($request) closure ($socket) {
 		if (!$socket->send($request."\r\n")) return;
 		if (!$resp = $socket->recv(8192)) return;
@@ -14,30 +18,31 @@ function ScanVADE($opts)
 		return $resp[strlen($request) + 6:];
 	};
 
-	if (!is_string($sendvparam("VRPARAM inet=$senderip"))) return;
-	if ($senderhelo and !is_string($sendvparam("VRPARAM helo=$senderhelo"))) return;
-	if ($sender and !is_string($sendvparam("VRPARAM mailfrom=$sender"))) return;
+	if (!is_string($sendvparam("VRPARAM inet=$senderip"))) return $exit();
+	if ($senderhelo and !is_string($sendvparam("VRPARAM helo=$senderhelo"))) return $exit();
+	if ($sender and !is_string($sendvparam("VRPARAM mailfrom=$sender"))) return $exit();
 	foreach ($recipients as $recipient)
-		if (!is_string($sendvparam("VRPARAM rcptto=$recipient"))) return;
+		if (!is_string($sendvparam("VRPARAM rcptto=$recipient"))) return $exit();
 
 	$request = "VRSCANB";
-	if (!$socket->send($request."\r\n")) return;
-	if (!$resp = $socket->recv(8192)) return;
-	if ($resp[0:2] != "OK") return;
+	if (!$socket->send($request."\r\n")) return $exit();
+	if (!$resp = $socket->recv(8192)) return $exit();
+	if ($resp[0:2] != "OK") return $exit();
 
 	$f = GetMailFile();
 	$b = 0;
 	while ($str = $f->read(8192))
 	{
-		if (!$socket->send($str)) return;
+		if (!$socket->send($str)) return $exit();
 		$b += strlen(string($str));
 		if ($b > 5 * 1024 * 1024)
 			break;
 	}
 
-	if (!$socket->send("\r\n.\r\n")) return;
-	if (!$resp = $socket->recv(8192)) return;
-	if ($resp[0:strlen($request) + 5] != $request.": OK,") return;
+	if (!$socket->send("\r\n.\r\n")) return $exit();
+	if (!$resp = $socket->recv(8192)) return $exit();
+	if ($resp[0:strlen($request) + 5] != $request.": OK,") return $exit();
+	$exit();
 
 	$data = trim($resp[strlen($request) + 5:]);
 	$response = [];

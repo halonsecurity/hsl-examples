@@ -1,5 +1,5 @@
 ## ScanVADE(options)
-Scan a message with Vadesecure's Daemon remotely over IP.
+Scan a message with Vadesecure's Daemon remotely over IP. This function should be used with the "per_message" cache.
 
 **Params**
 
