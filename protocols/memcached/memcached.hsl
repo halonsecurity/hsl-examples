@@ -65,5 +65,9 @@ function Memcached($address, $opts = [])
 		"delete" => function ($key) closure ($delete) {
 			return $delete($key);
 		},
+		"disconnect" => function () closure ($socket) {
+			$socket->shutdown("SHUT_RDWR");
+			$socket->close();
+		},
 	];
 }
