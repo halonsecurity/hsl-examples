@@ -1,4 +1,4 @@
-##ScanVADE(options)
+## ScanVADE(options)
 Scan a message with Vadesecure's Daemon remotely over IP.
 
 **Params**
