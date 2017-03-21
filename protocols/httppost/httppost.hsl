@@ -23,7 +23,7 @@ function httppost($opts, $fp)
 
 	$length += strlen($preamble) + strlen($postamble);
 
-	$exit = function() closure ($socket) {
+	$exit = function($socket) {
 		$socket->shutdown("SHUT_RDWR");
 	};
 
@@ -33,14 +33,14 @@ function httppost($opts, $fp)
 			"User-Agent: Halon HTTP client (HSL)",
 			"Content-Length: $length",
 			"Content-Type: multipart/form-data; boundary=$boundary",
-			])."\r\n\r\n")) return $exit();
+			])."\r\n\r\n")) return $exit($socket);
 
-	if (!$socket->send($preamble)) return $exit();
+	if (!$socket->send($preamble)) return $exit($socket);
 	while ($str = $fp->read(8192))
 		if (!$socket->send($str))
-			return $exit();
-	if (!$socket->send($postamble)) return $exit();
-	$exit();
+			return $exit($socket);
+	if (!$socket->send($postamble)) return $exit($socket);
+	$exit($socket);
 
 	$response = "";
 	while ($resp = $socket->recv(8192))
