@@ -1,10 +1,9 @@
 function ord($chr)
 {
-	$chars = array_map(function ($x) { return chr($x); }, range(0, 255));
-	foreach ($chars as $i => $c)
-		if ($c == $chr)
+	foreach (range(0, 255) as $i)
+		if ($chr == chr($i))
 			return $i;
-	return $chars[$chr];
+	return 0;
 }
 
 function hex($number)
