@@ -1,0 +1,40 @@
+function ord($chr)
+{
+	$chars = array_map(function ($x) { return chr($x); }, range(0, 255));
+	foreach ($chars as $i => $c)
+		if ($c == $chr)
+			return $i;
+	return $chars[$chr];
+}
+
+function hex($number)
+{
+	$hex = "0123456789ABCDEF";
+	$ret = "";
+	while ($number > 0)
+	{
+		$ret = $hex[$number & 0xf] . $ret;
+		$number = $number >> 4;
+	}
+	return $ret ?: "0";
+}
+
+// urlencoding according to rfc3986
+
+function urlencode($string)
+{
+	$ok = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~";
+	$result = "";
+	$i = 0;
+	$len = strlen($string);
+	while ($i < $len)
+	{
+		$c = $string[$i];
+		if (strpos($ok, $c) >= 0)
+			$result .= $c;
+		else
+			$result .= "%".hex(ord($c));
+		$i += 1;
+	}
+	return $result;
+}
