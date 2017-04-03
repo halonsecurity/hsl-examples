@@ -1,4 +1,4 @@
-include "file:urlencode";
+include_once "file:urlencode";
 
 $rewriteurl = "https://urlrewrite.example.com/";
 
