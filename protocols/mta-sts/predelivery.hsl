@@ -1,4 +1,4 @@
-include "file:mtasts";
+include_once "file:mtasts";
 
 $mtastspolicy = mta_sts($recipientdomain);
 if (is_array($mtastspolicy)) {
