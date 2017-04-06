@@ -7,10 +7,6 @@ function ScanVADE($opts)
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, number($opts["port"] ?? 8083))) return;
 
-	$exit = function($socket) {
-		$socket->shutdown("SHUT_RDWR");
-	};
-
 	$sendvparam = function($socket, $request) {
 		if (!$socket->send($request."\r\n")) return;
 		if (!$resp = $socket->recv(8192)) return;
@@ -18,31 +14,30 @@ function ScanVADE($opts)
 		return $resp[strlen($request) + 6:];
 	};
 
-	if (!is_string($sendvparam($socket, "VRPARAM inet=$senderip"))) return $exit($socket);
-	if ($senderhelo and !is_string($sendvparam($socket, "VRPARAM helo=$senderhelo"))) return $exit($socket);
-	if ($sender and !is_string($sendvparam($socket, "VRPARAM mailfrom=$sender"))) return $exit($socket);
+	if (!is_string($sendvparam($socket, "VRPARAM inet=$senderip"))) return;
+	if ($senderhelo and !is_string($sendvparam($socket, "VRPARAM helo=$senderhelo"))) return;
+	if ($sender and !is_string($sendvparam($socket, "VRPARAM mailfrom=$sender"))) return;
 	foreach ($recipients as $recipient)
-		if (!is_string($sendvparam($socket, "VRPARAM rcptto=$recipient"))) return $exit($socket);
+		if (!is_string($sendvparam($socket, "VRPARAM rcptto=$recipient"))) return;
 
 	$request = "VRSCANB";
-	if (!$socket->send($request."\r\n")) return $exit($socket);
-	if (!$resp = $socket->recv(8192)) return $exit($socket);
-	if ($resp[0:2] != "OK") return $exit($socket);
+	if (!$socket->send($request."\r\n")) return;
+	if (!$resp = $socket->recv(8192)) return;
+	if ($resp[0:2] != "OK") return;
 
 	$f = GetMailFile();
 	$b = 0;
 	while ($str = $f->read(8192))
 	{
-		if (!$socket->send($str)) return $exit($socket);
+		if (!$socket->send($str)) return;
 		$b += strlen(string($str));
 		if ($b > 5 * 1024 * 1024)
 			break;
 	}
 
-	if (!$socket->send("\r\n.\r\n")) return $exit($socket);
-	if (!$resp = $socket->recv(8192)) return $exit($socket);
-	if ($resp[0:strlen($request) + 5] != $request.": OK,") return $exit($socket);
-	$exit($socket);
+	if (!$socket->send("\r\n.\r\n")) return;
+	if (!$resp = $socket->recv(8192)) return;
+	if ($resp[0:strlen($request) + 5] != $request.": OK,") return;
 
 	$data = trim($resp[strlen($request) + 5:]);
 	$response = [];

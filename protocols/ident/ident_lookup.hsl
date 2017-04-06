@@ -5,22 +5,16 @@ function ident_lookup($senderip, $senderport, $serverip, $serverport, $opts = []
 	if (!$socket->bind($serverip)) return;
 	if (!$socket->connect($senderip, number($opts["port"] ?? 113))) return;
 
-	$exit = function($socket) {
-		$socket->shutdown("SHUT_RDWR");
-	};
-
-	if (!$socket->send("$senderport, $serverport\r\n")) return $exit($socket);
-	if (!$resp = $socket->recv(8192)) return $exit($socket);
-	if (!$resp = pcre_match(''^\s*(?<senderport>[0-9]{1,5})\s*,\s*(?<serverport>[0-9]{1,5})\s*:\s*(?<replytype>USERID|ERROR)\s*:\s*(?<addinfo>.*?)\s*$'', $resp)) return $exit($socket);
-	if (number($resp["senderport"]) != $senderport or number($resp["serverport"]) != $serverport) return $exit($socket);
+	if (!$socket->send("$senderport, $serverport\r\n")) return;
+	if (!$resp = $socket->recv(8192)) return;
+	if (!$resp = pcre_match(''^\s*(?<senderport>[0-9]{1,5})\s*,\s*(?<serverport>[0-9]{1,5})\s*:\s*(?<replytype>USERID|ERROR)\s*:\s*(?<addinfo>.*?)\s*$'', $resp)) return;
+	if (number($resp["senderport"]) != $senderport or number($resp["serverport"]) != $serverport) return;
 	if ($resp["replytype"] == "USERID") {
-		if (!$userid = pcre_match(''^(?<ostype>.*?)\s*:\s*(?<username>.*?)$'', $resp["addinfo"])) return $exit($socket);
-		$exit($socket);
+		if (!$userid = pcre_match(''^(?<ostype>.*?)\s*:\s*(?<username>.*?)$'', $resp["addinfo"])) return;
 		return ["ostype" => $userid["ostype"], "username" => $userid["username"]];
 	}
 	if ($resp["replytype"] == "ERROR") {
-		$exit($socket);
 		return ["error" => $resp["addinfo"]];
 	}
-	return $exit($socket);
+	return;
 }

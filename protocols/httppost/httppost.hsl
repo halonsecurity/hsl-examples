@@ -23,24 +23,19 @@ function httppost($opts, $fp)
 
 	$length += strlen($preamble) + strlen($postamble);
 
-	$exit = function($socket) {
-		$socket->shutdown("SHUT_RDWR");
-	};
-
 	if (!$socket->send(implode("\r\n", [
 			"POST $uri HTTP/1.0",
 			"Host: $host:$port",
 			"User-Agent: Halon HTTP client (HSL)",
 			"Content-Length: $length",
 			"Content-Type: multipart/form-data; boundary=$boundary",
-			])."\r\n\r\n")) return $exit($socket);
+			])."\r\n\r\n")) return;
 
-	if (!$socket->send($preamble)) return $exit($socket);
+	if (!$socket->send($preamble)) return;
 	while ($str = $fp->read(8192))
 		if (!$socket->send($str))
-			return $exit($socket);
-	if (!$socket->send($postamble)) return $exit($socket);
-	$exit($socket);
+			return;
+	if (!$socket->send($postamble)) return;
 
 	$response = "";
 	while ($resp = $socket->recv(8192))
