@@ -1,4 +1,4 @@
-function milter($opts, $senderip, $senderport, $senderhelo, $sender, $recipients, $fp)
+function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipients, $fp)
 {
 	$host = $opts["host"];
 	$port = $opts["port"];
@@ -7,32 +7,35 @@ function milter($opts, $senderip, $senderport, $senderhelo, $sender, $recipients
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, number($port))) return;
 
-	$socket->send(pack_uint32(13)."O".pack_uint32(2).pack_uint32(0x1 | 0x10 | 0x20).pack_uint32(0x7f));
+	milter_send($socket, "O", pack_uint32(2).pack_uint32(0x1 | 0x10 | 0x20).pack_uint32(0x7f));
 	if (!milter_read($socket, milter_expect_O)) return;
 
-	$c = "\x00".(strpos($senderip, ":") != -1 ? "6" : "4").pack_uint16($senderport).$senderip."\x00";
-	$socket->send(pack_uint32(1 + strlen($c))."C".$c);
+	milter_send($socket, "C",
+			"\x00".
+			(strpos($senderip, ":") != -1 ? "6" : "4").
+			pack_uint16($senderport).
+			$senderip."\x00");
 	if (!milter_read($socket, milter_expect_c)) return;
 
-	$socket->send(pack_uint32(2 + strlen($senderhelo))."H".$senderhelo."\x00");
+	milter_send($socket, "H", $senderhelo."\x00");
 	if (!milter_read($socket, milter_expect_c)) return;
 
-	$socket->send(pack_uint32(2 + strlen($sender))."M".$sender."\x00");
+	milter_send($socket, "M", $sender."\x00");
 	if (!milter_read($socket, milter_expect_c)) return;
 
 	foreach ($recipients as $r)
 	{
-		$socket->send(pack_uint32(2 + strlen($r))."R".$r."\x00");
+		milter_send($socket, "R", $r."\x00");
 		if (!milter_read($socket, milter_expect_c)) return;
 	}
 
 	while ($str = $fp->read(32768))
 	{
-		$socket->send(pack_uint32(2 + strlen($str))."B".$str."\x00");
+		milter_send($socket, "B", $str."\x00");
 		if (!milter_read($socket, milter_expect_c)) return;
 	}
 
-	$socket->send(pack_uint32(1)."E");
+	milter_send($socket, "E");
 
 	$responses = [];
 	while (true)
@@ -44,9 +47,14 @@ function milter($opts, $senderip, $senderport, $senderhelo, $sender, $recipients
 		$responses[] = $data;
 	}
 
-	$socket->send(pack_uint32(1)."Q");
+	milter_send($socket, "Q");
 	$socket->close();
 	return $responses;
+}
+
+function milter_send($socket, $cmd, $data = "")
+{
+	return $socket->send(pack_uint32(1 + strlen($data)).$cmd.$data);
 }
 
 function milter_read($socket, $parse)
