@@ -1,0 +1,108 @@
+function milter($opts, $senderhelo, $senderip, $sender, $recipients, $fp)
+{
+	$host = $opts["host"];
+	$port = $opts["port"];
+
+	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
+	if (!$socket->connect($host, number($port))) return;
+
+	$socket->send(pack_uint32(13)."O".pack_uint32(2).pack_uint32(0x1 | 0x10 | 0x20).pack_uint32(0x7f));
+	if (!milter_read($socket, milter_expect_O)) return;
+
+	$socket->send(pack_uint32(2 + strlen($senderhelo))."H".$senderhelo."\x00");
+	if (!milter_read($socket, milter_expect_c)) return;
+
+	$socket->send(pack_uint32(2 + strlen($sender))."M".$senderhelo."\x00");
+	if (!milter_read($socket, milter_expect_c)) return;
+
+	foreach ($recipients as $r)
+	{
+		$socket->send(pack_uint32(2 + strlen($sender))."R".$r."\x00");
+		if (!milter_read($socket, milter_expect_c)) return;
+	}
+
+	while ($str = $fp->read(32768))
+	{
+		$socket->send(pack_uint32(2 + strlen($str))."B".$str."\x00");
+		if (!milter_read($socket, milter_expect_c)) return;
+	}
+
+	$socket->send(pack_uint32(1)."E");
+	
+	$responses = [];
+	while (true)
+	{
+		$data = milter_read($socket, milter_parse);
+		if (!$data) return;
+		if ($data["r"] == "a")
+			break;
+		$responses[] = $data;
+	}
+
+	$socket->send(pack_uint32(1)."Q");
+	$socket->close();
+	return $responses;
+}
+
+function milter_read($socket, $parse)
+{
+	$data = $socket->recv(4);
+	if (!$data) return;
+	$data = $socket->recv(unpack_uint32($data));
+	if (!$data) return;
+	$payload = $parse($data[0], $data[1:]);
+	if (!is_array($payload)) return;
+	return ["r" => $data[0], "payload" => $payload];
+}
+
+function milter_expect_O($r, $data)
+{
+	if ($r != "O")
+		return;
+	return milter_parse($r, $data);
+}
+
+function milter_expect_c($r, $data)
+{
+	if ($r != "c")
+		return;
+	return milter_parse($r, $data);
+}
+
+function milter_parse($r, $data)
+{
+	if ($r == "h")
+	{
+		[$h, $v] = explode("\x00", $data);
+		return ["header" => $h, "value" => $v];
+	}
+	if ($r == "q")
+	{
+		[$r] = explode("\x00", $data);
+		return ["reason" => $r];
+	}
+	if ($r == "a")
+	{
+		return [];
+	}
+	if ($r == "O")
+	{
+		return [
+			"version" => unpack_uint32($data[0:4]),
+			"actions" => unpack_uint32($data[4:8]),
+			"protocol" => unpack_uint32($data[8:12]),
+		];
+	}
+	return [];
+}
+
+function pack_uint32($number)
+{
+	return chr($number >> 24 & 0xff).chr($number >> 16 & 0xff).chr($number >> 8 & 0xff).chr($number & 0xff);
+}
+
+function unpack_uint32($number)
+{
+	return (ord($number[0]) << 24 & 0xff) + (ord($number[1]) << 16 & 0xff) + (ord($number[2]) << 8 & 0xff) + (ord($number[3]) & 0xff);
+}
