@@ -1,11 +1,3 @@
-function ord($chr)
-{
-	foreach (range(0, 255) as $i)
-		if ($chr == chr($i))
-			return $i;
-	return 0;
-}
-
 function hex($number)
 {
 	$hex = "0123456789ABCDEF";
