@@ -42,9 +42,9 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 	{
 		$data = milter_read($socket, milter_parse);
 		if (!$data) return;
-		if ($data["r"] == "a")
-			break;
 		$responses[] = $data;
+		if ($data["r"] == "a" or $data["r"] == "r" or $data["r"] == "t")
+			break;
 	}
 
 	milter_send($socket, "Q");
@@ -94,7 +94,7 @@ function milter_parse($r, $data)
 		[$r] = explode("\x00", $data);
 		return ["reason" => $r];
 	}
-	if ($r == "a")
+	if ($r == "a" or $r == "r" or $r == "t")
 	{
 		return [];
 	}
