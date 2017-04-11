@@ -18,7 +18,7 @@ function milter($opts, $senderhelo, $senderip, $sender, $recipients, $fp)
 
 	foreach ($recipients as $r)
 	{
-		$socket->send(pack_uint32(2 + strlen($sender))."R".$r."\x00");
+		$socket->send(pack_uint32(2 + strlen($r))."R".$r."\x00");
 		if (!milter_read($socket, milter_expect_c)) return;
 	}
 
