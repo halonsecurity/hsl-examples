@@ -1,0 +1,12 @@
+## milter_v2(options, senderip, senderport, senderhelo, sender, recipients, fp)
+
+Implementation of the Milter protocol v2. It currenlty supports [clamav-milter](http://www.clamav.net/), however minor changes may allow it to connect to other servers as well.
+
+```
+$opts = ["host" => "1.1.1.1", "port" => 3381, "timeout_eod" => 15];
+$fp = GetMailFile();
+$result = milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipients, $fp);
+if (is_array($result))
+  foreach ($result as $r)
+	  echo $r;
+```
