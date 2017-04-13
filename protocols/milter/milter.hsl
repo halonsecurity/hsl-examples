@@ -35,6 +35,7 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 		if (!milter_read($socket, milter_expect_c)) return;
 	}
 
+	if (!$socket->settimeout(number($opts["timeout_eod"] ?? 5))) return;
 	milter_send($socket, "E");
 
 	$responses = [];
@@ -43,7 +44,7 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 		$data = milter_read($socket, milter_parse);
 		if (!$data) return;
 		$responses[] = $data;
-		if ($data["r"] == "a" or $data["r"] == "r" or $data["r"] == "t")
+		if (in_array($data["r"], ["a", "c", "t", "r"]))
 			break;
 	}
 
@@ -94,7 +95,11 @@ function milter_parse($r, $data)
 		[$r] = explode("\x00", $data);
 		return ["reason" => $r];
 	}
-	if ($r == "a" or $r == "r" or $r == "t")
+	if ($r == "y")
+	{
+		return ["smtpcode" => $data[0:3], "text" => $data[4:-1]];
+	}
+	if ($r == "a" or $r == "c" or $r == "r" or $r == "t")
 	{
 		return [];
 	}
