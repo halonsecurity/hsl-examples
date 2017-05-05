@@ -8,6 +8,7 @@ function File($content)
         },
         "read" => function ($length) closure ($p, $content) {
             if (!isset($content)) return;
+            if ($p < 0) return "";
             if ($p >= strlen($content)) return "";
             $data = $content[$p:$p+$length];
             $p += strlen($data);
@@ -18,13 +19,13 @@ function File($content)
             switch ($whence)
             {
                 case "SEEK_SET":
-                    $p = $offset > strlen($content) ? strlen($content) : $offset;
+                    $p = $offset;
                 break;
                 case "SEEK_CUR":
-                    $p = $p + $offset > strlen($content) ? strlen($content) : $p + $offset;
+                    $p = $p + $offset;
                 break;
                 case "SEEK_END":
-                    $p = strlen($content) - $offset < 0 ? 0 : strlen($content) - $offset;
+                    $p = strlen($content) + $offset < 0 ? -1 : strlen($content) + $offset;
                 break;
             }
             return $p;
