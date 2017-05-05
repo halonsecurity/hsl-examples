@@ -4,7 +4,7 @@ function File($content)
     return object [
         "close" => function () closure ($content) {
             if (!isset($content)) return;
-            unset($string);
+            unset($content);
         },
         "read" => function ($length) closure ($p, $content) {
             if (!isset($content)) return;
