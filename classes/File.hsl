@@ -1,0 +1,37 @@
+function File($content)
+{
+    $p = 0;
+    return object [
+        "close" => function () closure ($content) {
+            if (!isset($content)) return;
+            unset($string);
+        },
+        "read" => function ($length) closure ($p, $content) {
+            if (!isset($content)) return;
+            if ($p >= strlen($content)) return "";
+            $data = $content[$p:$p+$length];
+            $p += strlen($data);
+            return $data;
+        },
+        "seek" => function ($offset, $whence = "SEEK_SET") closure ($p, $content) {
+            if (!isset($content)) return;
+            switch ($whence)
+            {
+                case "SEEK_SET":
+                    $p = $offset > strlen($content) ? strlen($content) : $offset;
+                break;
+                case "SEEK_CUR":
+                    $p = $p + $offset > strlen($content) ? strlen($content) : $p + $offset;
+                break;
+                case "SEEK_END":
+                    $p = strlen($content) - $offset < 0 ? 0 : strlen($content) - $offset;
+                break;
+            }
+            return $p;
+        },
+        "tell" => function () closure ($p, $content) {
+            if (!isset($content)) return;
+            return $p;
+        },
+    ];
+}
