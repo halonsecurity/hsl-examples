@@ -20,7 +20,7 @@ function authoritypost($opts, $headers, $fp)
 				"--$boundary",
 				"Content-Disposition: form-data; name=\"$k\"",
 				"",
-				"$v"])."\r\n";
+				$v])."\r\n";
 	}
 
 	$rfc822 = implode("\r\n", [
