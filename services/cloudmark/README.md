@@ -1,4 +1,4 @@
-## ScanCM(options, senderip, senderhelo, sender, recipients, message)
+## ScanCM(options, senderip, senderhelo, sender, recipients, fp)
 Scan a message with Cloudmarks Authority server (using HTTP POST). This function should be used with the "per_message" cache.
 
 **Params**
