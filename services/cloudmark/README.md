@@ -1,5 +1,5 @@
 ## ScanCM(options, senderip, senderhelo, sender, recipients, fp)
-Scan a message with Cloudmarks Authority server (using HTTP POST). This function should be used with the "per_message" cache.
+Scan a message with Cloudmarks Authority server (using HTTP POST). This function should be used with the [`per_message` cache](http://docs.halon.se/hsl/structures.html#cache).
 
 **Params**
 
