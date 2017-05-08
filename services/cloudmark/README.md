@@ -14,8 +14,8 @@ The following options are available in the **options** array.
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
 - max_message_size `number` - The max message size in bytes. The default is 5 MiB.
 
-## ScanCMIP(options, senderip)
-Scan an IP with Cloudmarks Authority server (using HTTP POST). This function should be used with the "per_message" cache.
+## ScanIPCM(options, senderip)
+Scan an IP with Cloudmarks Authority server (using HTTP POST). This function should be used with the [`per_message` cache](http://docs.halon.se/hsl/structures.html#cache).
 
 **Params**
 
