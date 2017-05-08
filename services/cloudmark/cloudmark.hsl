@@ -1,0 +1,110 @@
+function authoritypost($opts, $headers, $fp)
+{
+	$host = $opts["host"];
+	$port = number($opts["port"] ?? 80);
+	$maxMessageSize = $opts["max_message_size"] ?? (5 * 1024 * 1024);
+
+	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
+	if (!$socket->connect($host, $port)) return;
+
+	$uri = $opts["uri"] ?? "/";
+	$length = $fp->seek(0, "SEEK_END");
+	$fp->seek(0, "SEEK_SET");
+
+	$boundary = uuid();
+
+	$preamble = "";
+	foreach ($headers as $k => $v) {
+		$preamble .= implode("\r\n", [
+				"--$boundary",
+				"Content-Disposition: form-data; name=\"$k\"",
+				"",
+				"$v"])."\r\n";
+	}
+
+	$rfc822 = implode("\r\n", [
+			"--$boundary",
+			"Content-Disposition: form-data; name=\"rfc822\"",
+			""])."\r\n";
+
+	$postamble = "\r\n--$boundary--\r\n";
+
+	$length += strlen($preamble) + strlen($rfc822) + strlen($postamble);
+
+	if (!$socket->send(implode("\r\n", [
+					"POST $uri HTTP/1.0",
+					"Host: $host:$port",
+					"User-Agent: Halon HTTP client (HSL)",
+					"Accept: application/json",
+					"Content-Length: $length",
+					"Content-Type: multipart/form-data; boundary=$boundary",
+	])."\r\n\r\n")) return;
+
+	if (!$socket->send($preamble)) return;
+	if (!$socket->send($rfc822)) return;
+
+	$b = 0;
+	while ($str = $fp->read(8192)) {
+		if (!$socket->send($str)) return;
+		$b += strlen(string($str));
+		if ($b > $maxMessageSize)
+			break;
+	}
+
+	if (!$socket->send($postamble)) return;
+
+	$response = "";
+	while ($resp = $socket->recv(8192))
+		$response .= $resp;
+
+	[$headers, $content] = explode("\r\n\r\n", $response);
+	[$http, $status, $msg] = explode(" ", explode("\r\n", $headers)[0]);
+
+	return ["status" => number($status), "content" => $content];
+}
+
+function ScanCM($opts, $senderip, $senderhelo, $sender, $recipients, $fp)
+{
+	$opts["uri"] = "/score/v2/message";
+
+	$headers = ["heloDomain" => $senderhelo, "mailFrom" => $sender, "rcptTo" => implode(";", $recipients), "connIp" => $senderip];
+	$result = authoritypost($opts, $headers, $fp);
+
+	if ($result["status"] != 200) {
+		echo "ScanCM() - Error ".$result["status"];
+		return 0;
+	}
+
+	$content = json_decode($result["content"]);
+
+	$score = $content["score"] ?? 0;
+	$analysis = $content["analysis"] ?? "";
+
+	echo "Cloudmark-Score: ".$score;
+	echo "Cloudmark-Analysis: ".$analysis;
+
+	return $score;
+}
+
+function ScanIPCM($opts, $ip)
+{
+	$opts["uri"] = "/score/v2/ip/";
+
+	$result = http($opts["host"].":".$opts["port"].$opts["uri"].$ip, ["timeout" => number($opts["timeout"] ?? 10), "extended_result" => true]);
+
+	if ($result["status"] != 200) {
+		echo "ScanIPCM() - Error ".$result["status"];
+		return 0;
+	}
+
+	$content = json_decode($result["content"]);
+
+	$score = $content["score"] ?? 0;
+	$analysis = $content["analysis"] ?? "";
+
+	echo "Cloudmark-Score: ".$score;
+	echo "Cloudmark-Analysis: ".$analysis;
+
+	return $score;
+}
