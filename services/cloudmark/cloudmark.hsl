@@ -68,15 +68,23 @@ function ScanCM($opts, $senderip, $senderhelo, $sender, $recipients, $fp)
 {
 	$opts["uri"] = "/score/v2/message";
 
-	$headers = ["heloDomain" => $senderhelo, "mailFrom" => $sender, "rcptTo" => implode(";", $recipients), "connIp" => $senderip];
+	$headers = [
+			"heloDomain" => $senderhelo,
+			"mailFrom" => $sender,
+			"rcptTo" => implode(";", $recipients),
+			"connIp" => $senderip
+		];
+
 	$result = authoritypost($opts, $headers, $fp);
 
 	if ($result["status"] != 200) {
 		echo "ScanCM() - Error ".$result["status"];
-		return 0;
+		return;
 	}
 
 	$content = json_decode($result["content"]);
+	if (!is_array($content))
+		return;
 
 	$score = $content["score"] ?? 0;
 	$analysis = $content["analysis"] ?? "";
@@ -89,16 +97,20 @@ function ScanCM($opts, $senderip, $senderhelo, $sender, $recipients, $fp)
 
 function ScanIPCM($opts, $ip)
 {
-	$opts["uri"] = "/score/v2/ip/";
-
-	$result = http($opts["host"].":".$opts["port"].$opts["uri"].$ip, ["timeout" => number($opts["timeout"] ?? 10), "extended_result" => true]);
+	$result = http($opts["host"].":".$opts["port"]."/score/v2/ip/".$ip,
+				[
+					"timeout" => number($opts["timeout"] ?? 5),
+					"extended_result" => true
+				]);
 
 	if ($result["status"] != 200) {
 		echo "ScanIPCM() - Error ".$result["status"];
-		return 0;
+		return;
 	}
 
 	$content = json_decode($result["content"]);
+	if (!is_array($content))
+		return;
 
 	$score = $content["score"] ?? 0;
 	$analysis = $content["analysis"] ?? "";
