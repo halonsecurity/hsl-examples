@@ -9,9 +9,10 @@ Scan a message with Cloudmarks Authority server (using HTTP POST). This function
 
 The following options are available in the **options** array.
 
-- host `string` - IP-address or hostname of the Vadesecure daemon. required
-- port `number` - TCP port. The default is 8083.
+- host `string` - IP-address or hostname of the Authority server. required
+- port `number` - TCP port. The default is 80.
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
+- max_message_size `number` - The max message size in bytes. The default is 5 MiB.
 
 ## ScanCMIP(options, ip)
 Scan an IP with Cloudmarks Authority server (using HTTP POST). This function should be used with the "per_message" cache.
@@ -25,6 +26,6 @@ Scan an IP with Cloudmarks Authority server (using HTTP POST). This function sho
 
 The following options are available in the **options** array.
 
-- host `string` - IP-address or hostname of the Vadesecure daemon. required
-- port `number` - TCP port. The default is 8083.
+- host `string` - IP-address or hostname of the Authority server. required
+- port `number` - TCP port. The default is 80.
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
