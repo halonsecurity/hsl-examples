@@ -30,7 +30,7 @@ function ScanVADE($opts)
 	while ($str = $f->read(8192))
 	{
 		if (!$socket->send($str)) return;
-		$b += strlen(string($str));
+		$b += strlen($str);
 		if ($b > 5 * 1024 * 1024)
 			break;
 	}
