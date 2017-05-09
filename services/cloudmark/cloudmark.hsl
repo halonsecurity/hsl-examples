@@ -47,7 +47,7 @@ function authoritypost($opts, $headers, $fp)
 	$b = 0;
 	while ($str = $fp->read(8192)) {
 		if (!$socket->send($str)) return;
-		$b += strlen(string($str));
+		$b += strlen($str);
 		if ($b > $maxMessageSize)
 			break;
 	}
