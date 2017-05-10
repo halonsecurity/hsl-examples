@@ -12,4 +12,4 @@ if (is_array($result))
 ```
 
 #### clamav-milter
-When using clamav-milter, you should use "AddHeader Replace" in the clamav-mitler.conf and parse the "h" response array item from milter_v2 for viruses.
+When using clamav-milter, you should use `AddHeader Replace` in the clamav-mitler.conf and parse the `"h"` response array item from `milter_v2` for viruses.
