@@ -10,6 +10,8 @@ function authoritypost($opts, $headers, $fp)
 
 	$uri = $opts["uri"] ?? "/";
 	$length = $fp->seek(0, "SEEK_END");
+	if ($length > $maxMessageSize) 
+		$length = $maxMessageSize;
 	$fp->seek(0, "SEEK_SET");
 
 	$boundary = uuid();
@@ -45,10 +47,10 @@ function authoritypost($opts, $headers, $fp)
 	if (!$socket->send($rfc822)) return;
 
 	$b = 0;
-	while ($str = $fp->read(8192)) {
+	while ($str = $fp->read(($maxMessageSize - $b < 8192) ? ($maxMessageSize - $b) : 8192)) {
 		if (!$socket->send($str)) return;
 		$b += strlen($str);
-		if ($b > $maxMessageSize)
+		if ($b >= $maxMessageSize)
 			break;
 	}
 
