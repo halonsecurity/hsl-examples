@@ -1,28 +1,17 @@
-include_once "file:mtasts";
+import { mta_sts } from "mtasts";
 
-$mtastspolicy = mta_sts($recipientdomain);
-if (is_array($mtastspolicy)) {
-	$mxlist = dnsmx($recipientdomain);
-	if (!$mxlist)
-		$mxlist = [$senderdomain];
-	$mx = mta_sts_filter_mx($mxlist, $mtastspolicy);
-
-	if (count($mx) == 0 and $mtastspolicy["mode"] == "enforce")
-		echo "MTA-STS: $recipientdomain: Reschedule(No valid MX found)";
-
-	echo "MTA-STS: $recipientdomain: STS enabled ($mx)";
-	
-	/*
-	SetDestination($mx[0]);
+$mtasts = mta_sts($recipientdomain);
+if (is_array($mtasts))
+{
+	echo "MTA-STS: $recipientdomain: STS enabled ($mtasts)";
+/*
 	SetTLS([
-		"tls_verify_host" => true,
+		"tls_verify_name" => $mtasts["mx"],
 		"tls_default_ca" => true,
 		"tls" => "require_verify",
 	]);
-	*/
-} else {
-	if (is_number($mtastspolicy) and !$mtastspolicy)
-		echo "MTA-STS: $recipientdomain: No STS policy";
-	else
-		echo "MTA-STS: $recipientdomain: Reschedule(An error occurred)";
+*/
+	} else {
+//		echo "MTA-STS: $recipientdomain: No STS policy";
+	}
 }
