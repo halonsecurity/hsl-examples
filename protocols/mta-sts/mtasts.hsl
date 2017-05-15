@@ -1,3 +1,5 @@
+$cacheSize = 10000;
+
 function mta_sts_fetch_new_policy($policydomain)
 {
 	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.json", [
@@ -21,56 +23,53 @@ function mta_sts_cache($policydomain, $value)
 	return $value;
 }
 
-function mta_sts($policydomain)
+function mta_sts_cache_policy($policydomain, $dnstxt, $policy)
 {
-	$cacheSize = 10000;
-
-	$txt = dnstxt("mta-sts.$policydomain");
-	$newSTS = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $txt);
-	if (count($newSTS) != 1)
-		$newSTS = false;
-
-	[$oldSTS, $oldPolicy] = cache [
-					"argv_filter" => [1],
-					"size" => $cacheSize,
-					"ttl" => 0, /* do no cache */
-				] mta_sts_cache($policydomain, [/* cache miss value */]);
-
-	if ($oldPolicy)
-	{   
-		if (!$newSTS or $oldSTS == $newSTS)
-			return $oldPolicy;
-	}   
-
-	if (!$newSTS) {
-		// no STS?
-		return false;
-	}
-
-	$newPolicy = mta_sts_fetch_new_policy($policydomain);
-	if ($newPolicy)
-	{
-		cache [
+	global $cacheSize;
+	cache [
 			"argv_filter" => [1],
 			"size" => $cacheSize,
-			"ttl" => $newPolicy["max_age"],
+			"ttl" => $policy["max_age"],
 			"force" => true, /* renew policy */
-		] mta_sts_cache($policydomain, [$newSTS, $newPolicy]); 
-
-		$oldPolicy = $newPolicy;
-	}
-
-	return $oldPolicy;
+		] mta_sts_cache($policydomain, [$dnstxt, $policy]); 
 }
 
-function mta_sts_filter_mx($mxlist, $policy)
+function mta_sts_fetch_cached_policy($policydomain)
 {
-	$mxfilter = $policy["mx"];
-	return array_filter(function ($mx) closure ($mxfilter) {
-		if (in_array($mx, $mxfilter))
-			return true;
-		if (in_array("*.".implode(".", explode(".", $mx)[1:]), $mxfilter))
-			return true;
-		return false;
-	}, $mxlist);
+	global $cacheSize;
+	return cache [
+			"argv_filter" => [1],
+				"size" => $cacheSize,
+				"ttl" => 0, /* do no cache */
+			] mta_sts_cache($policydomain, [/* cache miss value */]);
+}
+
+function mta_sts($policydomain)
+{
+	$dnstxt = dnstxt("_mta-sts.$policydomain");
+	$currenttxt = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $dnstxt);
+	if (count($currenttxt) != 1)
+		$currenttxt = [];
+
+	[$cachedtxt, $cachedpolicy] = mta_sts_fetch_cached_policy($policydomain);
+
+	// fetch-first or update
+	if ($currenttxt and $cachedtxt != $currenttxt)
+	{
+		$currentpolicy = cache [ "ttl" => 300, "size" => 2048 ] mta_sts_fetch_new_policy($policydomain);
+		if ($currentpolicy) {
+			mta_sts_cache_policy($policydomain, $currenttxt, $currentpolicy);
+			return $currentpolicy;
+		}
+	}
+
+	// use old cache
+	if ($cachedtxt) {
+		// extend cache
+		if ($cachedtxt == $currenttxt)
+			mta_sts_cache_policy($policydomain, $cachedtxt, $cachedpolicy);
+		return $cachedpolicy;
+	}
+
+	return false;
 }
