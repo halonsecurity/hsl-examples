@@ -7,6 +7,7 @@ function mta_sts_fetch_new_policy($policydomain)
 		"ssl_default_ca" => true,
 		"connect_timeout" => 5,
 		"timeout" => 5,
+		"max_file_size" => 64 * 1024,
 	]); 
 	if (!is_string($res))
 		return;
