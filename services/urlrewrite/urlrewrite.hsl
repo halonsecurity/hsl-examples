@@ -4,7 +4,7 @@ $rewriteurl = "https://urlrewrite.example.com/";
 
 foreach (
 	MIME("0")->findByType("^text/(plain|html)$") ?:
-	MIME("0")->getType() == "" or MIME("0")->getType() == "text/plain" or MIME("0")->getType() == "text/html" ? [MIME("0")] : [] as $a)
+	!MIME("0")->getType() or MIME("0")->getType() == "text/plain" or MIME("0")->getType() == "text/html" ? [MIME("0")] : [] as $a)
 {
 	if ($a->getHeader("Content-Disposition") and $a->getHeader("Content-Disposition") != "inline")
 		continue;
