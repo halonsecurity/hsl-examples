@@ -14,7 +14,7 @@ function hex_decode($input)
 
 function minger_lookup($host, $address, $opts = [])
 {
-	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_DGRAM");
+	$socket = Socket(Socket::AF($host), "SOCK_DGRAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return -1;
 	if (!$socket->connect($host, number($opts["port"] ?? 4069))) return -1;
 
