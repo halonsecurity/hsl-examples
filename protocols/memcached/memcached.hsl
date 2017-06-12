@@ -1,6 +1,6 @@
 function Memcached($address, $opts = [])
 {
-	$socket = Socket(strpos($address, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	$socket = Socket(Socket::AF($address), "SOCK_STREAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($address, number($opts["port"] ?? 11211))) return;
 
