@@ -3,7 +3,7 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 	$host = $opts["host"];
 	$port = $opts["port"];
 
-	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	$socket = Socket(Socket::AF($host), "SOCK_STREAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, number($port))) return;
 
