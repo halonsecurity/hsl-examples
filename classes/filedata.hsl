@@ -1,10 +1,12 @@
 class FileData
 {
-    constructor($content) {
+    constructor($content)
+    {
         $this->content = $content;
         $this->p = 0;
     }
-    function close() {
+    function close()
+    {
         if (!isset($this->content)) return;
         unset($this->content);
     }
