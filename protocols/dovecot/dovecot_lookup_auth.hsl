@@ -8,7 +8,7 @@ function dovecot_lookup_auth($opts, $username, $password)
 	$lip = $opts["lip"];
 	$secured = $opts["secured"] ?? false;
 
-	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	$socket = Socket(Socket::AF($host), "SOCK_STREAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return -1;
 	if (!$socket->connect($host, $port)) return -1;
 
