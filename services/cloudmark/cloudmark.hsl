@@ -4,7 +4,7 @@ function authoritypost($opts, $headers, $fp)
 	$port = number($opts["port"] ?? 80);
 	$maxMessageSize = $opts["max_message_size"] ?? (5 * 1024 * 1024);
 
-	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	$socket = Socket(Socket::AF($host), "SOCK_STREAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, $port)) return;
 
