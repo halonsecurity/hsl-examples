@@ -3,7 +3,7 @@ function ScanVADE($opts)
 	global $senderip, $senderhelo, $sender, $recipients;
 
 	$host = $opts["host"];
-	$socket = Socket(strpos($host, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	$socket = Socket(Socket::AF($host), "SOCK_STREAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, number($opts["port"] ?? 8083))) return;
 
