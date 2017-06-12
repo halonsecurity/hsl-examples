@@ -1,6 +1,6 @@
 function ident_lookup($senderip, $senderport, $serverip, $serverport, $opts = [])
 {
-	$socket = Socket(strpos($senderip, ":") != -1 ? "AF_INET6" : "AF_INET", "SOCK_STREAM");
+	$socket = Socket(Socket::AF($senderip), "SOCK_STREAM");
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->bind($serverip)) return;
 	if (!$socket->connect($senderip, number($opts["port"] ?? 113))) return;
