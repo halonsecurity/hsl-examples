@@ -58,7 +58,8 @@ function mta_sts($policydomain)
 	if ($currenttxt and $cachedtxt != $currenttxt)
 	{
 		$currentpolicy = cache [ "ttl" => 300, "size" => 2048 ] mta_sts_fetch_new_policy($policydomain);
-		if ($currentpolicy) {
+		if ($currentpolicy)
+		{
 			mta_sts_cache_policy($policydomain, $currenttxt, $currentpolicy);
 			return $currentpolicy;
 		}
