@@ -65,7 +65,8 @@ function mta_sts($policydomain)
 	}
 
 	// use old cache
-	if ($cachedtxt) {
+	if ($cachedtxt)
+	{
 		// extend cache
 		if ($cachedtxt == $currenttxt)
 			mta_sts_cache_policy($policydomain, $cachedtxt, $cachedpolicy);
