@@ -11,7 +11,7 @@ Try to authenticate the username against a dovecot server.
 
 The following options are available in the **options** array.
 
-- host `string` - IP-address or hostname of the dovecot server. required
+- host `string` - IP-address of the dovecot server. required
 - port `number` - TCP port. required
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
 
