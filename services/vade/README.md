@@ -9,7 +9,7 @@ Scan a message with Vadesecure's Daemon remotely over IP. This function should b
 
 The following options are available in the **options** array.
 
-- host `string` - IP-address or hostname of the Vadesecure daemon. required
+- host `string` - IP-address of the Vadesecure daemon. required
 - port `number` - TCP port. The default is 8083.
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
 
