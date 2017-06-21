@@ -10,7 +10,7 @@ Upload a File to a HTTP sever.
 
 The following options are available in the **options** array.
 
-- host `string` - IP-address or hostname of the HTTP server. required
+- host `string` - IP-address of the HTTP server. required
 - port `number` - TCP port. The default is 80.
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
 - uri `string` - The request URI. The default is /.
