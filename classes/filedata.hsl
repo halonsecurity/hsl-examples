@@ -1,44 +1,48 @@
 class FileData
 {
-    constructor($content)
-    {
-        $this->content = $content;
-        $this->p = 0;
-    }
-    function close()
-    {
-        if (!isset($this->content)) return;
-        unset($this->content);
-    }
-    function read($length)
-    {
-        if (!isset($this->content)) return;
-        if ($this->p < 0) return "";
-        if ($this->p >= strlen($this->content)) return "";
-        $data = $this->content[$this->p:$this->p + $length];
-        $this->p += strlen($data);
-        return $data;
-    }
-    function seek($offset, $whence = "SEEK_SET")
-    {
-        if (!isset($this->content)) return;
-        switch ($whence)
-        {
-            case "SEEK_SET":
-                $this->p = $offset;
-            break;
-            case "SEEK_CUR":
-                $this->p = $this->p + $offset;
-            break;
-            case "SEEK_END":
-                $this->p = strlen($this->content) + $offset < 0 ? -1 : strlen($this->content) + $offset;
-            break;
-        }
-        return $this->p;
-    }
-    function tell()
-    {
-        if (!isset($this->content)) return;
-        return $this->p;
-    }
+	constructor($content)
+	{
+		$this->content = $content;
+		$this->p = 0;
+	}
+
+	function close()
+	{
+		if (!isset($this->content)) return;
+		unset($this->content);
+	}
+
+	function read($length)
+	{
+		if (!isset($this->content)) return;
+		if ($this->p < 0) return "";
+		if ($this->p >= strlen($this->content)) return "";
+		$data = $this->content[$this->p:$this->p + $length];
+		$this->p += strlen($data);
+		return $data;
+	}
+
+	function seek($offset, $whence = "SEEK_SET")
+	{
+		if (!isset($this->content)) return;
+		switch ($whence)
+		{
+			case "SEEK_SET":
+				$this->p = $offset;
+				break;
+			case "SEEK_CUR":
+				$this->p = $this->p + $offset;
+				break;
+			case "SEEK_END":
+				$this->p = strlen($this->content) + $offset < 0 ? -1 : strlen($this->content) + $offset;
+				break;
+		}
+		return $this->p;
+	}
+
+	function tell()
+	{
+		if (!isset($this->content)) return;
+		return $this->p;
+	}
 }
