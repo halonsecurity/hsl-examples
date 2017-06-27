@@ -1,8 +1,9 @@
 class SPAMC
 {
-	constructor($address, $opts = [])
+	constructor($address, $mail, $opts = [])
 	{
 		$this->address = $address;
+		$this->mail = $mail;
 		$this->port = $opts["port"] ?? 783;
 		$this->user = $opts["user"] ?? none;
 		$this->sizelimit = $opts["size_limit"] ?? 500 * 1024;
@@ -51,8 +52,8 @@ class SPAMC
 		if ($this->user) if (!$this->socket->send("User: ".$this->user."\r\n")) return;
 		if (!$this->socket->send("\r\n")) return;
 
-		$f = GetMailFile();
-		while ($str = $f->read(8192))
+		$this->mail->seek(0, "SEEK_SET");
+		while ($str = $this->mail->read(8192))
 			if (!$this->socket->send($str))
 				return;
 
@@ -85,8 +86,8 @@ class SPAMC
 		if ($this->user) if (!$this->socket->send("User: ".$this->user."\r\n")) return;
 		if (!$this->socket->send("\r\n")) return;
 
-		$f = GetMailFile();
-		while ($str = $f->read(8192))
+		$this->mail->seek(0, "SEEK_SET");
+		while ($str = $this->mail->read(8192))
 			if (!$this->socket->send($str))
 				return;
 
@@ -111,10 +112,9 @@ class SPAMC
 
 	function _getSize()
 	{
-		$f = GetMailFile();
-		$s = 0;
-		while ($str = $f->read(8192))
-			$s += strlen($str);
+		$this->mail->seek(0, "SEEK_SET");
+		$s = $this->mail->seek(0, "SEEK_END");
+		$this->mail->seek(0, "SEEK_SET");
 		return $s;
 	}
 }
