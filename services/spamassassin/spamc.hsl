@@ -27,8 +27,7 @@ class SPAMC
 	function ping()
 	{
 		if (!$this->connect()) return;
-		if (!$this->socket->send("PING SPAMC/1.5\r\n")) return;
-		if (!$this->socket->send("\r\n")) return;
+		if (!$this->socket->send("PING SPAMC/1.5\r\n\r\n")) return;
 
 		$result = "";
 		while ($resp = $this->socket->recv(8192))
@@ -47,10 +46,13 @@ class SPAMC
 		if ($s > $this->sizelimit) return;
 
 		if (!$this->connect()) return;
-		if (!$this->socket->send("CHECK SPAMC/1.5\r\n")) return;
-		if (!$this->socket->send("Content-length: $s\r\n")) return;
-		if ($this->user) if (!$this->socket->send("User: ".$this->user."\r\n")) return;
-		if (!$this->socket->send("\r\n")) return;
+
+		$str = "";
+		$str .= "CHECK SPAMC/1.5\r\n";
+		$str .= "Content-length: $s\r\n";
+		if ($this->user) $str = "User: ".$this->user."\r\n";
+		$str .= "\r\n";
+		if (!$this->socket->send($str)) return;
 
 		$this->mail->seek(0, "SEEK_SET");
 		while ($str = $this->mail->read(8192))
@@ -81,10 +83,13 @@ class SPAMC
 		if ($s > $this->sizelimit) return;
 
 		if (!$this->connect()) return;
-		if (!$this->socket->send("SYMBOLS SPAMC/1.5\r\n")) return;
-		if (!$this->socket->send("Content-length: $s\r\n")) return;
-		if ($this->user) if (!$this->socket->send("User: ".$this->user."\r\n")) return;
-		if (!$this->socket->send("\r\n")) return;
+
+		$str = "";
+		$str .= "SYMBOLS SPAMC/1.5\r\n";
+		$str .= "Content-length: $s\r\n";
+		if ($this->user) $str = "User: ".$this->user."\r\n";
+		$str .= "\r\n";
+		if (!$this->socket->send($str)) return;
 
 		$this->mail->seek(0, "SEEK_SET");
 		while ($str = $this->mail->read(8192))
