@@ -14,7 +14,7 @@ class SPAMC
 		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
 		if (!$this->socket->settimeout($this->timeout)) return;
 		if (!$this->socket->connect($this->address, $this->port)) return;
-		return 1;
+		return true;
 	}
 
 	function disconnect()
@@ -36,8 +36,8 @@ class SPAMC
 		$this->disconnect();
 
 		if (!$result) return;
-		if ($result and strpos($result, "PONG") != -1) return 1;
-		return 0;
+		if ($result and strpos($result, "PONG") != -1) return true;
+		return false;
 	}
 
 	function check()
