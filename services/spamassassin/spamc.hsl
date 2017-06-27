@@ -1,0 +1,120 @@
+class SPAMC
+{
+	constructor($address, $opts = [])
+	{
+		$this->address = $address;
+		$this->port = $opts["port"] ?? 783;
+		$this->user = $opts["user"] ?? none;
+		$this->sizelimit = $opts["size_limit"] ?? 500 * 1024;
+		$this->timeout = $opts["timeout"] ?? 30;
+	}
+
+	function connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return;
+		if (!$this->socket->connect($this->address, $this->port)) return;
+		return 1;
+	}
+
+	function disconnect()
+	{
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
+	}
+
+	function ping()
+	{
+		if (!$this->connect()) return;
+		if (!$this->socket->send("PING SPAMC/1.5\r\n")) return;
+		if (!$this->socket->send("\r\n")) return;
+
+		$result = "";
+		while ($resp = $this->socket->recv(8192))
+			$result .= $resp;
+
+		$this->disconnect();
+
+		if (!$result) return;
+		if ($result and strpos($result, "PONG") != -1) return 1;
+		return 0;
+	}
+
+	function check()
+	{
+		$s = $this->_getSize();
+		if ($s > $this->sizelimit) return;
+
+		if (!$this->connect()) return;
+		if (!$this->socket->send("CHECK SPAMC/1.5\r\n")) return;
+		if (!$this->socket->send("Content-length: $s\r\n")) return;
+		if ($this->user) if (!$this->socket->send("User: ".$this->user."\r\n")) return;
+		if (!$this->socket->send("\r\n")) return;
+
+		$f = GetMailFile();
+		while ($str = $f->read(8192))
+			if (!$this->socket->send($str))
+				return;
+
+		$result = "";
+		while ($resp = $this->socket->recv(8192))
+			$result .= $resp;
+
+		$this->disconnect();
+
+		if (!$result) return;
+		if (!pcre_match("EX_OK", $result)) return;
+
+		$result = pcre_match(''Spam: (.*) ; (.*) / (.*)\r\n'', $result);
+
+		return [
+			"spam" => $result[1] == "True" ? true : false,
+			"score" => number($result[2]),
+			"thres" => number($result[3])
+		];
+	}
+
+	function symbols()
+	{
+		$s = $this->_getSize();
+		if ($s > $this->sizelimit) return;
+
+		if (!$this->connect()) return;
+		if (!$this->socket->send("SYMBOLS SPAMC/1.5\r\n")) return;
+		if (!$this->socket->send("Content-length: $s\r\n")) return;
+		if ($this->user) if (!$this->socket->send("User: ".$this->user."\r\n")) return;
+		if (!$this->socket->send("\r\n")) return;
+
+		$f = GetMailFile();
+		while ($str = $f->read(8192))
+			if (!$this->socket->send($str))
+				return;
+
+		$result = "";
+		while ($resp = $this->socket->recv(8192))
+			$result .= $resp;
+
+		$this->disconnect();
+
+		if (!$result) return;
+		if (!pcre_match("EX_OK", $result)) return;
+
+		$result = pcre_match(''Spam: (.*) ; (.*) / (.*)\r\n\r\n(.*)'', $result);
+
+		return [
+			"spam" => $result[1] == "True" ? true : false,
+			"score" => number($result[2]),
+			"thres" => number($result[3]),
+			"symbols" => explode(",", $result[4])
+		];
+	}
+
+	function _getSize()
+	{
+		$f = GetMailFile();
+		$s = 0;
+		while ($str = $f->read(8192))
+			$s += strlen($str);
+		return $s;
+	}
+}
