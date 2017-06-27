@@ -112,7 +112,6 @@ class SPAMC
 
 	function _getSize()
 	{
-		$this->mail->seek(0, "SEEK_SET");
 		$s = $this->mail->seek(0, "SEEK_END");
 		$this->mail->seek(0, "SEEK_SET");
 		return $s;
