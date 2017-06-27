@@ -47,10 +47,9 @@ class SPAMC
 
 		if (!$this->connect()) return;
 
-		$str = "";
-		$str .= "CHECK SPAMC/1.5\r\n";
+		$str = "CHECK SPAMC/1.5\r\n";
 		$str .= "Content-length: $s\r\n";
-		if ($this->user) $str = "User: ".$this->user."\r\n";
+		if ($this->user) $str .= "User: ".$this->user."\r\n";
 		$str .= "\r\n";
 		if (!$this->socket->send($str)) return;
 
@@ -84,10 +83,9 @@ class SPAMC
 
 		if (!$this->connect()) return;
 
-		$str = "";
-		$str .= "SYMBOLS SPAMC/1.5\r\n";
+		$str = "SYMBOLS SPAMC/1.5\r\n";
 		$str .= "Content-length: $s\r\n";
-		if ($this->user) $str = "User: ".$this->user."\r\n";
+		if ($this->user) $str .= "User: ".$this->user."\r\n";
 		$str .= "\r\n";
 		if (!$this->socket->send($str)) return;
 
