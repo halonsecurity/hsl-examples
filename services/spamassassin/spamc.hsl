@@ -36,7 +36,7 @@ class SPAMC
 		$this->disconnect();
 
 		if (!$result) return;
-		if ($result and strpos($result, "PONG") != -1) return true;
+		if (strpos($result, "PONG") != -1) return true;
 		return false;
 	}
 
