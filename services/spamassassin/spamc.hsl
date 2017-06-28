@@ -20,8 +20,10 @@ class SPAMC
 
 	function disconnect()
 	{
-		$this->socket->shutdown("SHUT_RDWR");
-		$this->socket->close();
+		if ($this->socket) {
+			$this->socket->shutdown("SHUT_RDWR");
+			$this->socket->close();
+		}
 	}
 
 	function ping()
