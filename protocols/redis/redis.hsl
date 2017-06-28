@@ -1,0 +1,150 @@
+class Redis
+{
+	constructor($address, $opts = [])
+	{
+		$this->address = $address;
+		$this->timeout = $opts["timeout"] ?? 5;
+		$this->port = $opts["port"] ?? 6379;
+	}
+
+	function connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return;
+		if (!$this->socket->connect($this->address, $this->port)) return;
+		return true;
+	}
+
+	function disconnect()
+	{
+		if ($this->socket)
+		{
+			$this->socket->shutdown("SHUT_RDWR");
+			$this->socket->close();
+		}
+	}
+
+	function get($line)
+	{
+		if ($this->_exec($line))
+			return $this->_get_response();
+		else
+			return;
+	}
+
+	function set($line)
+	{
+		if ($this->_exec($line))
+			return $this->_get_response();
+		else
+			return;
+	}
+
+	function _exec($line)
+	{
+		return ($this->socket->send("$line\r\n") != none);
+	}
+
+	function _get_response()
+	{
+		$char = $this->_fgetc();
+
+		if ($char == "*")
+		{
+			$size = number(trim($this->_fgets()));
+
+			if ($size == -1) return;
+
+			$response = [];
+			$i = 0;
+			while ($i < $size)
+			{
+				$char = $this->_fgetc();
+				$response[] = $this->_read_response($char);
+				$i += 1;
+			}
+
+			return $response;
+		}
+
+		return $this->_read_response($char);
+	}
+
+	function _read_response($char)
+	{
+		$response = "";
+
+		switch ($char)
+		{
+			case ":":
+				$response = $this->_fetch_integer();
+				break;
+			case "+":
+				$response = $this->_fetch_inline();
+				break;
+			case "$":
+				$response = $this->_fetch_bulk();
+				break;
+			case "-":
+				$response = $this->_fetch_inline();
+				break;
+		}
+
+		return $response;
+	}
+
+	function _fgetc()
+	{
+		return $this->socket->recv(1);
+	}
+
+	function _fgets($length = 8192)
+	{
+		$data = "";
+		$b = 0;
+		while ($b < $length)
+		{
+			if (!$resp = $this->socket->recv(1))
+				break;
+
+			$b += strlen($resp);
+			$data .= $resp;
+
+			if ($data[-2:] == "\r\n")
+				break;
+		}
+
+		return $data;
+	}
+
+	function _fetch_integer()
+	{
+		return number(trim($this->socket->recv(8192)));
+	}
+
+	function _fetch_inline()
+	{
+		return trim($this->socket->recv(8192));
+	}
+
+	function _fetch_bulk()
+	{
+		$size = number(trim($this->_fgets()));
+
+		if ($size == -1) return;
+
+		$data = "";
+		$b = 0;
+		while ($b < $size)
+		{
+			if (!$resp = $this->socket->recv( ($size - $b < 8192) ? ($size - $b) : 8192 )) return;
+
+			$b += strlen($resp);
+			$data .= $resp;
+		}
+
+		if ($this->_fgets() != "\r\n") return;
+
+		return $data;
+	}
+}
