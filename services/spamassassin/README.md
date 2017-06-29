@@ -20,16 +20,19 @@ The following options are available in the **opts** array.
 Check if the spamd server is alive.
 
 **Returns**: `true` if response is valid, `false` for invalid response
+
 **Return type**: `boolean`, `none` on error
 
 ## check()
 Check if message is spam or not.
 
 **Returns**: associative array containing the result of the scan
+
 **Return type**: `array`, `none` on error
 
 ## symbols()
 Check if message is spam or not and also include symbols hit in the response.
 
 **Returns**: associative array containing the result of the scan and list of symbols hit
+
 **Return type**: `array`, `none` on error
