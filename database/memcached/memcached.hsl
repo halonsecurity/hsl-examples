@@ -17,7 +17,8 @@ class Memcached
 
 	function disconnect()
 	{
-		if ($this->socket) {
+		if ($this->socket)
+		{
 			$this->socket->shutdown("SHUT_RDWR");
 			$this->socket->close();
 		}
@@ -27,26 +28,32 @@ class Memcached
 	{
 		return $this->_store("set", $key, $flags, $exptime, $value);
 	}
+
 	function get($key)
 	{
 		return $this->_fetch("get", $key);
 	}
+
 	function add($key, $value, $flags = 0, $exptime = 0)
 	{
 		return $this->_store("add", $key, $flags, $exptime, $value);
 	}
+
 	function del($key)
 	{
 		return $this->_delete($key);
 	}
+
 	function replace($key, $value, $flags = 0, $exptime = 0)
 	{
 		return $this->_store("replace", $key, $flags, $exptime, $value);
 	}
+
 	function append($key, $value, $flags = 0, $exptime = 0)
 	{
 		return $this->_store("append", $key, $flags, $exptime, $value);
 	}
+
 	function prepend($key, $value, $flags = 0, $exptime = 0)
 	{
 		return $this->_store("prepend", $key, $flags, $exptime, $value);
