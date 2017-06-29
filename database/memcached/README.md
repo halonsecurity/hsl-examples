@@ -10,7 +10,7 @@ Memcached client class.
 
 The following options are available in the **opts** array.
 
-- port `number` - TCP port. The default is 6379.
+- port `number` - TCP port. The default is 11211.
 - timeout `number` - Timeout in seconds. The default is 5 seconds.
 
 ## connect()
