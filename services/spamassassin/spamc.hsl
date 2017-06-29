@@ -10,7 +10,7 @@ class SPAMC
 		$this->timeout = $opts["timeout"] ?? 30;
 	}
 
-	function connect()
+	function _connect()
 	{
 		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
 		if (!$this->socket->settimeout($this->timeout)) return;
@@ -18,7 +18,7 @@ class SPAMC
 		return true;
 	}
 
-	function disconnect()
+	function _disconnect()
 	{
 		if ($this->socket) {
 			$this->socket->shutdown("SHUT_RDWR");
@@ -28,14 +28,14 @@ class SPAMC
 
 	function ping()
 	{
-		if (!$this->connect()) return;
+		if (!$this->_connect()) return;
 		if (!$this->socket->send("PING SPAMC/1.5\r\n\r\n")) return;
 
 		$result = "";
 		while ($resp = $this->socket->recv(8192))
 			$result .= $resp;
 
-		$this->disconnect();
+		$this->_disconnect();
 
 		if (!$result) return;
 		if (strpos($result, "PONG") != -1) return true;
@@ -47,7 +47,7 @@ class SPAMC
 		$s = $this->_getSize();
 		if ($s > $this->sizelimit) return;
 
-		if (!$this->connect()) return;
+		if (!$this->_connect()) return;
 
 		$str = "CHECK SPAMC/1.5\r\n";
 		$str .= "Content-length: $s\r\n";
@@ -64,7 +64,7 @@ class SPAMC
 		while ($resp = $this->socket->recv(8192))
 			$result .= $resp;
 
-		$this->disconnect();
+		$this->_disconnect();
 
 		if (!$result) return;
 		if (!pcre_match("EX_OK", $result)) return;
@@ -83,7 +83,7 @@ class SPAMC
 		$s = $this->_getSize();
 		if ($s > $this->sizelimit) return;
 
-		if (!$this->connect()) return;
+		if (!$this->_connect()) return;
 
 		$str = "SYMBOLS SPAMC/1.5\r\n";
 		$str .= "Content-length: $s\r\n";
@@ -100,7 +100,7 @@ class SPAMC
 		while ($resp = $this->socket->recv(8192))
 			$result .= $resp;
 
-		$this->disconnect();
+		$this->_disconnect();
 
 		if (!$result) return;
 		if (!pcre_match("EX_OK", $result)) return;
