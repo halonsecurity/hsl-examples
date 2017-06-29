@@ -2,14 +2,25 @@ class Memcached
 {
 	constructor($address, $opts = [])
 	{
-		$this->socket = Socket(Socket::AF($address), "SOCK_STREAM");
-		if (!$this->socket->settimeout($opts["timeout"] ?? 5)) return;
-		if (!$this->socket->connect($address, $opts["port"] ?? 11211)) return;
+		$this->address = $address;
+		$this->timeout = $opts["timeout"] ?? 5;
+		$this->port = $opts["port"] ?? 11211;
 	}
+
+	function connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return;
+		if (!$this->socket->connect($this->address, $this->port)) return;
+		return true;
+	}
+
 	function disconnect()
 	{
-		$this->socket->shutdown("SHUT_RDWR");
-		$this->socket->close();
+		if ($this->socket) {
+			$this->socket->shutdown("SHUT_RDWR");
+			$this->socket->close();
+		}
 	}
 
 	function set($key, $value, $flags = 0, $exptime = 0)
