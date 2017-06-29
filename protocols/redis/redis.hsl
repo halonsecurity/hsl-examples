@@ -24,25 +24,22 @@ class Redis
 		}
 	}
 
-	function get($line)
+	function query($cmd)
 	{
-		if ($this->_exec($line))
+		if ($this->_exec($cmd))
 			return $this->_get_response();
 		else
 			return;
 	}
 
-	function set($line)
+	function getLastError()
 	{
-		if ($this->_exec($line))
-			return $this->_get_response();
-		else
-			return;
+		return $this->error ?? none;
 	}
 
-	function _exec($line)
+	function _exec($cmd)
 	{
-		return ($this->socket->send("$line\r\n") != none);
+		return ($this->socket->send("$cmd\r\n") != none);
 	}
 
 	function _get_response()
@@ -86,8 +83,8 @@ class Redis
 				$response = $this->_fetch_bulk();
 				break;
 			case "-":
-				$response = $this->_fetch_inline();
-				break;
+				$this->error = $this->_fetch_inline();
+				return;
 		}
 
 		return $response;
