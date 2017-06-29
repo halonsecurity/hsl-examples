@@ -29,4 +29,4 @@ Disconnects the current connection.
 ## del(key)
 ## replace(key, value, flags = 0, exptime = 0)
 ## append(key, value, flags = 0, exptime = 0)
-## prepend(key, value, flags = 0, $xptime = 0)
+## prepend(key, value, flags = 0, exptime = 0)
