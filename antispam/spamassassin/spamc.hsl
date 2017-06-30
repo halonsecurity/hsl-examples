@@ -1,29 +1,21 @@
 class SPAMC
 {
+	private $address = none;
+	private $port = none;
+	private $timeout = none;
+	private $mail = none;
+	private $user = none;
+	private $sizelimit = none;
+	private $socket = none;
+
 	constructor($address, $mail, $opts = [])
 	{
 		$this->address = $address;
-		$this->mail = $mail;
 		$this->port = $opts["port"] ?? 783;
+		$this->timeout = $opts["timeout"] ?? 30;
+		$this->mail = $mail;
 		$this->user = $opts["user"] ?? none;
 		$this->sizelimit = $opts["size_limit"] ?? 500 * 1024;
-		$this->timeout = $opts["timeout"] ?? 30;
-	}
-
-	function _connect()
-	{
-		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
-		if (!$this->socket->settimeout($this->timeout)) return;
-		if (!$this->socket->connect($this->address, $this->port)) return;
-		return true;
-	}
-
-	function _disconnect()
-	{
-		if ($this->socket) {
-			$this->socket->shutdown("SHUT_RDWR");
-			$this->socket->close();
-		}
 	}
 
 	function ping()
@@ -115,7 +107,23 @@ class SPAMC
 		];
 	}
 
-	function _getSize()
+	private function _connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return;
+		if (!$this->socket->connect($this->address, $this->port)) return;
+		return true;
+	}
+
+	private function _disconnect()
+	{
+		if ($this->socket) {
+			$this->socket->shutdown("SHUT_RDWR");
+			$this->socket->close();
+		}
+	}
+
+	private function _getSize()
 	{
 		$s = $this->mail->seek(0, "SEEK_END");
 		$this->mail->seek(0, "SEEK_SET");
