@@ -1,9 +1,11 @@
 class FileData
 {
+	private $p = 0;
+	private $content = none;
+
 	constructor($content)
 	{
 		$this->content = $content;
-		$this->p = 0;
 	}
 
 	function close()
