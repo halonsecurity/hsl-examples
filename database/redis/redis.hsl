@@ -1,10 +1,16 @@
 class Redis
 {
+	private $address = none;
+	private $port = none;
+	private $timeout = none;
+	private $socket = none;
+	private $error = none;
+
 	constructor($address, $opts = [])
 	{
 		$this->address = $address;
-		$this->timeout = $opts["timeout"] ?? 5;
 		$this->port = $opts["port"] ?? 6379;
+		$this->timeout = $opts["timeout"] ?? 5;
 	}
 
 	function connect()
@@ -37,12 +43,12 @@ class Redis
 		return $this->error ?? none;
 	}
 
-	function _exec($cmd)
+	private function _exec($cmd)
 	{
 		return ($this->socket->send("$cmd\r\n") != none);
 	}
 
-	function _get_response()
+	private function _get_response()
 	{
 		$char = $this->_fgetc();
 
@@ -67,7 +73,7 @@ class Redis
 		return $this->_read_response($char);
 	}
 
-	function _read_response($char)
+	private function _read_response($char)
 	{
 		$response = "";
 
@@ -90,12 +96,12 @@ class Redis
 		return $response;
 	}
 
-	function _fgetc()
+	private function _fgetc()
 	{
 		return $this->socket->recv(1);
 	}
 
-	function _fgets($length = 8192)
+	private function _fgets($length = 8192)
 	{
 		$data = "";
 		$b = 0;
@@ -114,17 +120,17 @@ class Redis
 		return $data;
 	}
 
-	function _fetch_integer()
+	private function _fetch_integer()
 	{
 		return number(trim($this->socket->recv(8192)));
 	}
 
-	function _fetch_inline()
+	private function _fetch_inline()
 	{
 		return trim($this->socket->recv(8192));
 	}
 
-	function _fetch_bulk()
+	private function _fetch_bulk()
 	{
 		$size = number(trim($this->_fgets()));
 
