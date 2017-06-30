@@ -1,10 +1,15 @@
 class Memcached
 {
+	private $address = none;
+	private $port = none;
+	private $timeout = none;
+	private $socket = none;
+
 	constructor($address, $opts = [])
 	{
 		$this->address = $address;
-		$this->timeout = $opts["timeout"] ?? 5;
 		$this->port = $opts["port"] ?? 11211;
+		$this->timeout = $opts["timeout"] ?? 5;
 	}
 
 	function connect()
@@ -59,7 +64,7 @@ class Memcached
 		return $this->_store("prepend", $key, $flags, $exptime, $value);
 	}
 
-	function _fetch($command, $key)
+	private function _fetch($command, $key)
 	{
 		if (!$this->socket->send("$command $key\r\n")) return;
 		$data = "";
@@ -85,7 +90,7 @@ class Memcached
 		return $values;
 	}
 
-	function _delete($key)
+	private function _delete($key)
 	{
 		if (!$this->socket->send("delete $key\r\n")) return;
 		if (!$resp = $this->socket->recv(8192)) return;
@@ -93,7 +98,7 @@ class Memcached
 		return $resp == "DELETED";
 	}
 
-	function _store($command, $key, $flags, $exptime, $value)
+	private function _store($command, $key, $flags, $exptime, $value)
 	{
 		$bytes = strlen($value);
 		if (!$this->socket->send("$command $key $flags $exptime $bytes\r\n$value\r\n")) return;
