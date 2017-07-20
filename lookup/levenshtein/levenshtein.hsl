@@ -1,22 +1,27 @@
-function levenshtein($s, $t) {
+function levenshtein($s, $t)
+{
 	$m = strlen($s);
 	$n = strlen($t);
 	
 	$i = 0;
-	while ($i <= $m) {
+	while ($i <= $m)
+	{
 		$d[$i][0] = $i;
 		$i += 1;
 	}
 	$j = 0;
-	while ($j <= $n) {
+	while ($j <= $n)
+	{
 		$d[0][$j] = $j;
 		$j += 1;
 	}
 
 	$i = 1;
-	while ($i <= $m) {
+	while ($i <= $m)
+	{
 		$j = 1;
-		while ($j <= $n) {
+		while ($j <= $n)
+		{
 			$c = ($s[$i - 1] == $t[$j - 1]) ? 0 : 1;
 			$d[$i][$j] = min([$d[$i - 1][$j] + 1, $d[$i][$j - 1] + 1, $d[$i - 1][$j - 1] + $c]);
 			$j += 1;
@@ -27,7 +32,8 @@ function levenshtein($s, $t) {
 	return $d[$m][$n];
 }
 
-function min ($a) {
+function min($a)
+{
 	return array_reduce(
 		function ($c, $i) {
 			return $i < $c ? $i : $c;
