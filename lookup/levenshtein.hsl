@@ -1,4 +1,4 @@
-function levenshtein_distance($s, $t) {
+function levenshtein($s, $t) {
 	$m = strlen($s);
 	$n = strlen($t);
 	
@@ -27,17 +27,9 @@ function levenshtein_distance($s, $t) {
 	return $d[$m][$n];
 }
 
-function min($a) {
-	$i = 0;
-	while ($i < count($a)) {
-		if ($i == 0) {
-			$m = $a[$i];
-		} else {
-			if ($a[$i] < $m) {
-				$m = $a[$i];
-			}
-		}
-		$i += 1;
-	}
-	return $m;
+function min ($a) {
+	return array_reduce(
+		function ($c, $i) {
+			return $i < $c ? $i : $c;
+		}, $a);
 }
