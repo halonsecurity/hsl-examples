@@ -23,11 +23,11 @@ class Redis
 
 	function disconnect()
 	{
-		if ($this->socket)
-		{
-			$this->socket->shutdown("SHUT_RDWR");
-			$this->socket->close();
-		}
+		if (!$this->socket)
+			return;
+
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
 	}
 
 	function query($cmd)
