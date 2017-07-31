@@ -11,12 +11,32 @@ function mta_sts_fetch_new_policy($policydomain)
 	]); 
 	if (!is_string($res))
 		return;
-	$policy = json_decode($res);
-	if (!is_array($policy))
-		return;
+	$policy = mta_sts_parse_policy($res);
 	if ($policy["version"] != "STSv1")
 		return;
 	return $policy;
+}
+
+function mta_sts_parse_policy($policy)
+{
+	return array_reduce(
+		function ($r, $v) {
+			if ($v[0] == "mx")
+				$r[$v[0]][] = $v[1];
+			else
+				$r[$v[0]] = $v[1];
+			return $r;
+		},
+		array_map(
+			function ($v) {
+				[$key, $value] = explode(":", $v, 2);
+				return [trim($key), trim($value)];
+			},
+			array_filter(function ($v) {
+				return strpos($v, ":") != -1;
+			}, explode("\n", $policy))
+		),
+		[]);
 }
 
 function mta_sts_cache($policydomain, $value)
