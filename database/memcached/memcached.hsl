@@ -22,11 +22,11 @@ class Memcached
 
 	function disconnect()
 	{
-		if ($this->socket)
-		{
-			$this->socket->shutdown("SHUT_RDWR");
-			$this->socket->close();
-		}
+		if (!$this->socket)
+			return;
+
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
 	}
 
 	function set($key, $value, $flags = 0, $exptime = 0)
