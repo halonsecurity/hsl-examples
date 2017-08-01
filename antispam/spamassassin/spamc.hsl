@@ -20,14 +20,14 @@ class SPAMC
 
 	function ping()
 	{
-		if (!$this->_connect()) return;
+		if (!$this->__connect()) return;
 		if (!$this->socket->send("PING SPAMC/1.5\r\n\r\n")) return;
 
 		$result = "";
 		while ($resp = $this->socket->recv(8192))
 			$result .= $resp;
 
-		$this->_disconnect();
+		$this->__disconnect();
 
 		if (!$result) return;
 		if (strpos($result, "PONG") != -1) return true;
@@ -36,10 +36,10 @@ class SPAMC
 
 	function check()
 	{
-		$s = $this->_getSize();
+		$s = $this->__getSize();
 		if ($s > $this->sizelimit) return;
 
-		if (!$this->_connect()) return;
+		if (!$this->__connect()) return;
 
 		$str = "CHECK SPAMC/1.5\r\n";
 		$str .= "Content-length: $s\r\n";
@@ -56,7 +56,7 @@ class SPAMC
 		while ($resp = $this->socket->recv(8192))
 			$result .= $resp;
 
-		$this->_disconnect();
+		$this->__disconnect();
 
 		if (!$result) return;
 		if (!pcre_match("EX_OK", $result)) return;
@@ -72,10 +72,10 @@ class SPAMC
 
 	function symbols()
 	{
-		$s = $this->_getSize();
+		$s = $this->__getSize();
 		if ($s > $this->sizelimit) return;
 
-		if (!$this->_connect()) return;
+		if (!$this->__connect()) return;
 
 		$str = "SYMBOLS SPAMC/1.5\r\n";
 		$str .= "Content-length: $s\r\n";
@@ -92,7 +92,7 @@ class SPAMC
 		while ($resp = $this->socket->recv(8192))
 			$result .= $resp;
 
-		$this->_disconnect();
+		$this->__disconnect();
 
 		if (!$result) return;
 		if (!pcre_match("EX_OK", $result)) return;
@@ -107,7 +107,7 @@ class SPAMC
 		];
 	}
 
-	private function _connect()
+	private function __connect()
 	{
 		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
 		if (!$this->socket->settimeout($this->timeout)) return;
@@ -115,15 +115,16 @@ class SPAMC
 		return true;
 	}
 
-	private function _disconnect()
+	private function __disconnect()
 	{
-		if ($this->socket) {
-			$this->socket->shutdown("SHUT_RDWR");
-			$this->socket->close();
-		}
+		if (!$this->socket)
+			return;
+
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
 	}
 
-	private function _getSize()
+	private function __getSize()
 	{
 		$s = $this->mail->seek(0, "SEEK_END");
 		$this->mail->seek(0, "SEEK_SET");
