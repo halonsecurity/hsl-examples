@@ -6,7 +6,7 @@ SMTP client class
 - address `string` - IP address of SMTP server (required)
 - opts `array` - Options array
   - port `number` - TCP port (default 25)
-  - timeout `number` - Timeout in seconds (default 5)
+  - timeout `number` - Timeout in seconds (default 30)
 
 **Returns**: class object.
 
