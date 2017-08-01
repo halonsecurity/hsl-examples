@@ -32,8 +32,8 @@ class Redis
 
 	function query($cmd)
 	{
-		if ($this->_exec($cmd))
-			return $this->_get_response();
+		if ($this->__exec($cmd))
+			return $this->__get_response();
 		else
 			return;
 	}
@@ -43,18 +43,18 @@ class Redis
 		return $this->error ?? none;
 	}
 
-	private function _exec($cmd)
+	private function __exec($cmd)
 	{
 		return ($this->socket->send("$cmd\r\n") != none);
 	}
 
-	private function _get_response()
+	private function __get_response()
 	{
-		$char = $this->_fgetc();
+		$char = $this->__fgetc();
 
 		if ($char == "*")
 		{
-			$size = number(trim($this->_fgets()));
+			$size = number(trim($this->__fgets()));
 
 			if ($size == -1) return;
 
@@ -62,46 +62,46 @@ class Redis
 			$i = 0;
 			while ($i < $size)
 			{
-				$char = $this->_fgetc();
-				$response[] = $this->_read_response($char);
+				$char = $this->__fgetc();
+				$response[] = $this->__read_response($char);
 				$i += 1;
 			}
 
 			return $response;
 		}
 
-		return $this->_read_response($char);
+		return $this->__read_response($char);
 	}
 
-	private function _read_response($char)
+	private function __read_response($char)
 	{
 		$response = "";
 
 		switch ($char)
 		{
 			case ":":
-				$response = $this->_fetch_integer();
+				$response = $this->__fetch_integer();
 				break;
 			case "+":
-				$response = $this->_fetch_inline();
+				$response = $this->__fetch_inline();
 				break;
 			case "$":
-				$response = $this->_fetch_bulk();
+				$response = $this->__fetch_bulk();
 				break;
 			case "-":
-				$this->error = $this->_fetch_inline();
+				$this->error = $this->__fetch_inline();
 				return;
 		}
 
 		return $response;
 	}
 
-	private function _fgetc()
+	private function __fgetc()
 	{
 		return $this->socket->recv(1);
 	}
 
-	private function _fgets($length = 8192)
+	private function __fgets($length = 8192)
 	{
 		$data = "";
 		$b = 0;
@@ -120,19 +120,19 @@ class Redis
 		return $data;
 	}
 
-	private function _fetch_integer()
+	private function __fetch_integer()
 	{
 		return number(trim($this->socket->recv(8192)));
 	}
 
-	private function _fetch_inline()
+	private function __fetch_inline()
 	{
 		return trim($this->socket->recv(8192));
 	}
 
-	private function _fetch_bulk()
+	private function __fetch_bulk()
 	{
-		$size = number(trim($this->_fgets()));
+		$size = number(trim($this->__fgets()));
 
 		if ($size == -1) return;
 
