@@ -1,0 +1,167 @@
+class SMTPClient
+{
+	private $socket = none;
+	private $address = none;
+	private $port = none;
+	private $timeout = none;
+	private $debug = false;
+	private $lasterror = "";
+	private $permanent = false;
+
+	constructor($address, $opts = [])
+	{
+		$this->address = $address;
+		$this->port = $opts["port"] ?? 25;
+		$this->timeout = $opts["timeout"] ?? 300;
+		$this->debug = $opts["debug"] ?? false;
+	}
+
+	function connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return false;
+		if (!$this->socket->connect($this->address, $this->port)) return $smtpd->__set_error();
+		if (!$this->command(none, 220)) return false;
+		return true;
+	}
+
+	function EHLO($hostname)
+	{
+		return $this->command("EHLO $hostname", 250);
+	}
+
+	function XCLIENT($param, $value)
+	{
+		return $this->command("XCLIENT $param=$value", 220);
+	}
+
+	function MAILFROM($sender)
+	{
+		return $this->command("MAIL FROM:<$sender>", 250);
+	}
+
+	function RCPTTO($recipient)
+	{
+		return $this->command("RCPT TO:<$recipient>", 250);
+	}
+
+	function DATA($fp)
+	{
+		if (!$this->command("DATA", 354))
+			return false;
+
+		$fp->seek(0, "SEEK_SET");
+
+		$lastByteWasN = false;
+		while ($str = $fp->read(8192))
+		{
+			if ($lastByteWasN and $str[0] == ".")
+				if (!$this->socket->send("."))
+					return $this->__set_error();
+			if (!$this->socket->send(str_replace("\n.", "\n..", $str))) 
+				return $this->__set_error();
+			$lastByteWasN = ($str[-1:] == "\n");
+		}
+		if (!$lastByteWasN)
+			$this->socket->send("\r\n");
+
+		if (!$this->command(".", 250))
+			return false;
+		return true;
+	}
+ 
+ 	function QUIT()
+	{
+		return $this->command("QUIT", 221);
+	}
+
+	function getLastError()
+	{
+		return $this->lasterror;
+	}
+
+	function isPermanent()
+	{
+		return $this->permanent;
+	}
+
+	function disconnect()
+	{
+		if (!$this->socket)
+			return;
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
+	}
+
+	function command($cmd, $expectcode)
+	{
+		if ($this->debug)
+				echo "SMTPClient  send: '$cmd'";
+
+		if ($cmd)
+			if (!$this->socket->send("$cmd\r\n"))
+				return $this->__set_error();
+
+		[$code, $lines] = $this->__reply();
+		if (!is_number($code))
+			return false;
+
+		if ($code != $expectcode)
+			return $this->__set_error("Unexpected reply: $code ".implode(" ", $lines), $code >= 500);
+		return true;
+	}
+
+	// returns [code, [lines]] or none
+	private function __reply()
+	{
+		$lines = [];
+		forever
+		{
+			$line = $this->__readline();
+			if (!is_string($line))
+				return; // disconnect
+
+			if ($this->debug)
+				echo "SMTPClient reply: '".trim($line)."'";
+		
+			if (strlen($line) < 4)
+				return [-1, ["Too short reply: $line"]]; // too short reply
+			
+			$code = number($line[0:3]);
+			if (string($code) != $line[0:3])
+				return [-1, ["Invalid code: $line"]]; // invalid code
+	
+			if ($line[3] == " ")
+				return [$code, $lines + [trim($line[4:])]];
+			else if ($line[3] == "-")
+				$lines[] = trim($line[4:]);
+			else
+				return [-1, ["Invalid reply: $line"]]; // invalid reply
+		}
+	}
+
+	private function __readline()
+	{
+		$line = "";
+		forever
+		{
+			$r = $this->socket->recv(1);
+			if (!$r)
+				return $this->__set_error(); // socket error
+			$line += $r;
+			if ($r == "\n")
+				return $line;
+		}
+	}
+
+	private function __set_error($msg = none, $permanent = false)
+	{
+		if ($msg)
+			$this->lasterror = $msg;
+		else
+			$this->lasterror = "Socket error: ".$this->socket->errno();
+		$this->permanent = $permanent;
+
+		return false;
+	}
+}
