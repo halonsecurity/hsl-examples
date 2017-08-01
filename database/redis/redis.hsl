@@ -146,7 +146,7 @@ class Redis
 			$data .= $resp;
 		}
 
-		if ($this->_fgets() != "\r\n") return;
+		if ($this->__fgets() != "\r\n") return;
 
 		return $data;
 	}
