@@ -13,6 +13,7 @@ The following options are available in the **opts** array.
 
 - port `number` - TCP port. The default is 783.
 - user `string` - Username of the user for which the scan is being performed.
+- sender `string` - Prepends a "Return-Path" header to the mail file with the provided envelope sender.
 - size_limit `number` - Size limit in bytes. The default is 512 000.
 - timeout `number` - Timeout in seconds. The default is 30 seconds.
 

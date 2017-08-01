@@ -5,6 +5,7 @@ class SPAMC
 	private $timeout = none;
 	private $mail = none;
 	private $user = none;
+	private $sender = none;
 	private $sizelimit = none;
 	private $socket = none;
 
@@ -15,6 +16,7 @@ class SPAMC
 		$this->timeout = $opts["timeout"] ?? 30;
 		$this->mail = $mail;
 		$this->user = $opts["user"] ?? none;
+		$this->sender = $opts["sender"] ?? none;
 		$this->sizelimit = $opts["size_limit"] ?? 500 * 1024;
 	}
 
@@ -47,6 +49,8 @@ class SPAMC
 		$str .= "\r\n";
 		if (!$this->socket->send($str)) return;
 
+		if ($this->sender)
+			$this->socket->send("Return-Path: ".$this->sender."\r\n");
 		$this->mail->seek(0, "SEEK_SET");
 		while ($str = $this->mail->read(8192))
 			if (!$this->socket->send($str))
@@ -83,6 +87,8 @@ class SPAMC
 		$str .= "\r\n";
 		if (!$this->socket->send($str)) return;
 
+		if ($this->sender)
+			$this->socket->send("Return-Path: <".$this->sender.">\r\n");
 		$this->mail->seek(0, "SEEK_SET");
 		while ($str = $this->mail->read(8192))
 			if (!$this->socket->send($str))
@@ -128,6 +134,8 @@ class SPAMC
 	{
 		$s = $this->mail->seek(0, "SEEK_END");
 		$this->mail->seek(0, "SEEK_SET");
+		if ($this->sender)
+			$s += strlen("Return-Path: <".$this->sender.">\r\n");
 		return $s;
 	}
 }
