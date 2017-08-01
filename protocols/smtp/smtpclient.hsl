@@ -12,7 +12,7 @@ class SMTPClient
 	{
 		$this->address = $address;
 		$this->port = $opts["port"] ?? 25;
-		$this->timeout = $opts["timeout"] ?? 300;
+		$this->timeout = $opts["timeout"] ?? 30;
 		$this->debug = $opts["debug"] ?? false;
 	}
 
