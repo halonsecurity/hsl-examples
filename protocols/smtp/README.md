@@ -15,7 +15,6 @@ SMTP client class
 // Returns [success, isPermanent, lastError]
 function SMTPDeliver($address, $sender, $recipients, $fp)
 {
-	global;
 	$smtp = SMTPClient($address, ["debug" => true]);
 	if (!$smtp->connect()) return [false, $smtp->isPermanent(), $smtp->getLastError()];
 	if (!$smtp->EHLO(gethostname())) return [false, $smtp->isPermanent(), $smtp->getLastError()];
@@ -37,7 +36,7 @@ Establish a connection to the IP address that was passed to the class constructo
 
 ### disconnect()
 ### EHLO(hostname)
-### XCLIENT(key, value)
+### XCLIENT(name, value)
 ### MAILFROM(sender)
 ### RCPTTO(recipient)
 ### DATA(fp)
