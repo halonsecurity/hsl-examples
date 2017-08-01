@@ -30,9 +30,9 @@ class SMTPClient
 		return $this->command("EHLO $hostname", 250);
 	}
 
-	function XCLIENT($param, $value)
+	function XCLIENT($name, $value)
 	{
-		return $this->command("XCLIENT $param=$value", 220);
+		return $this->command("XCLIENT $name=$value", 220);
 	}
 
 	function MAILFROM($sender)
