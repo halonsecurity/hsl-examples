@@ -31,40 +31,40 @@ class Memcached
 
 	function set($key, $value, $flags = 0, $exptime = 0)
 	{
-		return $this->_store("set", $key, $flags, $exptime, $value);
+		return $this->__store("set", $key, $flags, $exptime, $value);
 	}
 
 	function get($key)
 	{
-		return $this->_fetch("get", $key);
+		return $this->__fetch("get", $key);
 	}
 
 	function add($key, $value, $flags = 0, $exptime = 0)
 	{
-		return $this->_store("add", $key, $flags, $exptime, $value);
+		return $this->__store("add", $key, $flags, $exptime, $value);
 	}
 
 	function del($key)
 	{
-		return $this->_delete($key);
+		return $this->__delete($key);
 	}
 
 	function replace($key, $value, $flags = 0, $exptime = 0)
 	{
-		return $this->_store("replace", $key, $flags, $exptime, $value);
+		return $this->__store("replace", $key, $flags, $exptime, $value);
 	}
 
 	function append($key, $value, $flags = 0, $exptime = 0)
 	{
-		return $this->_store("append", $key, $flags, $exptime, $value);
+		return $this->__store("append", $key, $flags, $exptime, $value);
 	}
 
 	function prepend($key, $value, $flags = 0, $exptime = 0)
 	{
-		return $this->_store("prepend", $key, $flags, $exptime, $value);
+		return $this->__store("prepend", $key, $flags, $exptime, $value);
 	}
 
-	private function _fetch($command, $key)
+	private function __fetch($command, $key)
 	{
 		if (!$this->socket->send("$command $key\r\n")) return;
 		$data = "";
@@ -90,7 +90,7 @@ class Memcached
 		return $values;
 	}
 
-	private function _delete($key)
+	private function __delete($key)
 	{
 		if (!$this->socket->send("delete $key\r\n")) return;
 		if (!$resp = $this->socket->recv(8192)) return;
@@ -98,7 +98,7 @@ class Memcached
 		return $resp == "DELETED";
 	}
 
-	private function _store($command, $key, $flags, $exptime, $value)
+	private function __store($command, $key, $flags, $exptime, $value)
 	{
 		$bytes = strlen($value);
 		if (!$this->socket->send("$command $key $flags $exptime $bytes\r\n$value\r\n")) return;
