@@ -50,7 +50,7 @@ class SPAMC
 		if (!$this->socket->send($str)) return;
 
 		if ($this->sender)
-			$this->socket->send("Return-Path: ".$this->sender."\r\n");
+			$this->socket->send("Return-Path: <".$this->sender.">\r\n");
 		$this->mail->seek(0, "SEEK_SET");
 		while ($str = $this->mail->read(8192))
 			if (!$this->socket->send($str))
