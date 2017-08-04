@@ -155,6 +155,7 @@ class PostgreSQL
 			if ($tag == "1") continue;
 			if ($tag == "2") continue;
 			if ($tag == "t") continue;
+			if ($tag == "n") continue;
 			if ($tag == "C") continue;
 			if ($tag == "E") $this->setError($data);
 			if ($tag == "Z") return $rows;
