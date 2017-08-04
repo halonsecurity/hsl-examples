@@ -1,4 +1,4 @@
-## PostgreSQL(address, user, database, opts)
+## PostgreSQL(address, user, database[, opts])
 PostgreSQL client class.
 
 **Params**
