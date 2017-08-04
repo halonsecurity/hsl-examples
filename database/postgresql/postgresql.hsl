@@ -47,12 +47,12 @@ class PostgreSQL
 		$this->socket->close();
 	}
 
-	function query($query, $params = [])
+	function query($statement, $params = [])
 	{
 		$this->error = none;
 
 		// Parse
-		$data = "\x00".$query."\x00".$this->pack16(count($params));
+		$data = "\x00".$statement."\x00".$this->pack16(count($params));
 		foreach ($params as $p) {
 			if (is_string($p))
 				$data .= $this->pack32(25);
@@ -86,11 +86,11 @@ class PostgreSQL
 		return $this->getQueryResponse();
 	}
 
-	function execute($query)
+	function execute($statement)
 	{
 		$this->error = none;
 
-		$this->socket->send("Q".$this->pack32(strlen($query) + 5).$query."\x00");
+		$this->socket->send("Q".$this->pack32(strlen($statement) + 5).$statement."\x00");
 
 		return $this->getQueryResponse();
 	}
