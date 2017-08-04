@@ -44,7 +44,6 @@ Pass a statement as-is to the PostgreSQL server.
 
 **Returns**: response as array, None on error.
 
-
 ## getLastError()
 Returns the last error that was sent by the server.
 
