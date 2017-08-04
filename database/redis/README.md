@@ -35,4 +35,4 @@ Pass a command as-is to the redis server.
 ## getLastError()
 Returns the last error that was sent by the server.
 
-**Returns**: string, None if no errors found.
+**Returns**: array, None if no errors found.
