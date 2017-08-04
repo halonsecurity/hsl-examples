@@ -40,7 +40,7 @@ Pass a statement as-is to the PostgreSQL server.
 
 **Params**
 
-- query `string` - Query to be executed.
+- statement `string` - Query to be executed.
 
 **Returns**: response as array, None on error.
 
