@@ -1,0 +1,205 @@
+class PostgreSQL
+{
+	private $address = none;
+	private $port = none;
+	private $timeout = none;
+	private $socket = none;
+	private $user = none;
+	private $database = none;
+	private $error = none;
+
+	constructor($address, $user, $database, $opts = [])
+	{
+		$this->address = $address;
+		$this->user = $user;
+		$this->database = $database;
+		$this->port = $opts["port"] ?? 5432;
+		$this->timeout = $opts["timeout"] ?? 30;
+	}
+
+	function connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return;
+		if (!$this->socket->connect($this->address, $this->port)) return;
+
+		$l = "user\x00".$this->user."\x00database\x00".$this->database."\x00\x00";
+		$this->socket->send($this->pack32(strlen($l) + 8)."\x00\x03\x00\x00".$l);
+
+		forever
+		{
+			[$tag, $data] = $this->recv();
+			if ($tag == "R") continue;
+			if ($tag == "S") continue;
+			if ($tag == "K") continue;
+			if ($tag == "Z") return true;
+			if ($tag == "E") $this->setError($data);
+			return false;
+		}
+	}
+
+	function disconnect()
+	{
+		if (!$this->socket)
+			return;
+
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
+	}
+
+	function query($query, $params = [])
+	{
+		$this->error = none;
+
+		// Parse
+		$data = "\x00".$query."\x00".$this->pack16(count($params));
+		foreach ($params as $p) {
+			if (is_string($p))
+				$data .= $this->pack32(25);
+			else if (is_number($p))
+				$data .= $this->pack32(701);
+			else
+				$data .= $this->pack32(705);
+		}
+		$this->socket->send("P".$this->pack32(strlen($data) + 4).$data);
+
+		// Bind
+		$data = "\x00\x00".$this->pack16(1).$this->pack16(0).$this->pack16(count($params));
+		foreach ($params as $p) {
+			$data .= $this->pack32(strlen($p)).$p;
+		}
+		$data .= $this->pack16(1).$this->pack16(0);
+		$this->socket->send("B".$this->pack32(strlen($data) + 4).$data);
+
+		// Describe
+		$data = "S\x00";
+		$this->socket->send("D".$this->pack32(strlen($data) + 4).$data);
+
+		// Execute
+		$data = "\x00".$this->pack32(0);
+		$this->socket->send("E".$this->pack32(strlen($data) + 4).$data);
+
+		// Sync
+		$data = "";
+		$this->socket->send("S".$this->pack32(strlen($data) + 4).$data);
+
+		return $this->getQueryResponse();
+	}
+
+	function execute($query)
+	{
+		$this->error = none;
+
+		$this->socket->send("Q".$this->pack32(strlen($query) + 5).$query."\x00");
+
+		return $this->getQueryResponse();
+	}
+
+	function getLastError()
+	{
+		return $this->error ?? none;
+	}
+
+	private function getQueryResponse()
+	{
+		$rows = [];
+		$fields = [];
+		forever
+		{
+			[$tag, $data] = $this->recv();
+
+			if ($tag == "T")
+			{
+				$numfields = $this->unpack16($data[0:2]);
+				$o = 2;
+				while ($numfields > 0)
+				{
+					$o2 = strpos($data[$o:], "\x00");
+					$col = $data[$o:$o + $o2];
+					$o += $o2 + 1;
+					$fields[] = $col;
+
+					$tableoid = $data[$o:$o+=4];
+					$colno = $data[$o:$o+=2];
+					$typeoid = $data[$o:$o+=4];
+					$typelen = $data[$o:$o+=2];
+					$typmod = $data[$o:$o+=4];
+					$format = $data[$o:$o+=2];
+
+					$numfields -= 1;
+				}
+				continue;
+			}
+
+			if ($tag == "D")
+			{
+				$numfields = $this->unpack16($data[0:2]);
+				$o = 2;
+				$f = 0;
+				$row = [];
+				while ($f < $numfields)
+				{
+					$o2 = $this->unpack32($data[$o:$o+4]);
+					$o += 4;
+					$d = $data[$o:$o + $o2];
+					$o += $o2;
+
+					$row[$fields[$f]] = $d;
+
+					$f += 1;
+				}
+				$rows[] = $row;
+				continue;
+			}
+
+			if ($tag == "1") continue;
+			if ($tag == "2") continue;
+			if ($tag == "t") continue;
+			if ($tag == "C") continue;
+			if ($tag == "E") $this->setError($data);
+			if ($tag == "Z") return $rows;
+
+			return;
+		}
+	}
+
+	private function recv()
+	{
+		$tag = $this->socket->recv(1);
+		if (!$tag)
+			return [];
+		$len = $this->unpack32($this->socket->recv(4));
+		if ($len > 4)
+			$data = $this->socket->recv($len - 4);
+		else
+			$data = "";
+		return [$tag, $data];
+	}
+
+	private function setError($data)
+	{
+		$this->error = [];
+		foreach(explode("\x00", $data[0:-2]) as $error)
+			$this->error[$error[0]] = $error[1:];
+	}
+
+	private function pack16($value)
+	{
+		return chr($value >> 8 & 0xff).chr($value & 0xff);
+	}
+
+	private function pack32($value)
+	{
+		return chr($value >> 24 & 0xff).chr($value >> 16 & 0xff).chr($value >> 8 & 0xff).chr($value & 0xff);
+	}
+
+	private function unpack16($data)
+	{
+		return (ord($data[0]) << 8) + ord($data[1]);
+	}
+
+	private function unpack32($data)
+	{
+		return (ord($data[0]) << 24) + (ord($data[1]) << 16) + (ord($data[2]) << 8) + ord($data[3]);
+	}
+}
