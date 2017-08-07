@@ -23,8 +23,8 @@ class PostgreSQL
 		if (!$this->socket->settimeout($this->timeout)) return;
 		if (!$this->socket->connect($this->address, $this->port)) return;
 
-		$l = "user\x00".$this->user."\x00database\x00".$this->database."\x00\x00";
-		$this->socket->send($this->pack32(strlen($l) + 8)."\x00\x03\x00\x00".$l);
+		$l = pack("Z*Z*Z*Z*x", "user", $this->user, "database", $this->database);
+		$this->socket->send(pack("Na*a*", strlen($l) + 8, "\x00\x03\x00\x00", $l));
 
 		forever
 		{
@@ -47,41 +47,41 @@ class PostgreSQL
 		$this->socket->close();
 	}
 
-	function query($statement, $params = [])
+	function query($query, $params = [])
 	{
 		$this->error = none;
 
 		// Parse
-		$data = "\x00".$statement."\x00".$this->pack16(count($params));
+		$stmt = "";
+		$data = pack("Z*Z*n", $stmt, $query, count($params));
 		foreach ($params as $p) {
 			if (is_string($p))
-				$data .= $this->pack32(25);
+				$data .= pack("N", 25);
 			else if (is_number($p))
-				$data .= $this->pack32(701);
+				$data .= pack("N", 701);
 			else
-				$data .= $this->pack32(705);
+				$data .= pack("N", 705);
 		}
-		$this->socket->send("P".$this->pack32(strlen($data) + 4).$data);
+		$this->socket->send(pack("aNa*", "P", 4 + strlen($data), $data));
 
 		// Bind
-		$data = "\x00\x00".$this->pack16(1).$this->pack16(0).$this->pack16(count($params));
-		foreach ($params as $p) {
-			$data .= $this->pack32(strlen($p)).$p;
-		}
-		$data .= $this->pack16(1).$this->pack16(0);
-		$this->socket->send("B".$this->pack32(strlen($data) + 4).$data);
+		$portal = "";
+		$stmt = "";
+		$data = pack("Z*Z*nnn", $portal, $stmt, 1, 0, count($params));
+		foreach ($params as $p) $data .= pack("Na*", strlen($p), $p);
+		$data .= pack("nn", 1, 0);
+		$this->socket->send(pack("aNa*", "B", 4 + strlen($data), $data));
 
 		// Describe
-		$data = "S\x00";
-		$this->socket->send("D".$this->pack32(strlen($data) + 4).$data);
+		$name = "";
+		$this->socket->send(pack("aNaZ*", "D", 4 + 1 + strlen($name) + 1, "S", $name));
 
 		// Execute
-		$data = "\x00".$this->pack32(0);
-		$this->socket->send("E".$this->pack32(strlen($data) + 4).$data);
+		$portal = "";
+		$this->socket->send(pack("aNZ*N", "E", 4 + strlen($portal) + 1 + 4, $portal, 0));
 
 		// Sync
-		$data = "";
-		$this->socket->send("S".$this->pack32(strlen($data) + 4).$data);
+		$this->socket->send(pack("aN", "S", 4));
 
 		return $this->getQueryResponse();
 	}
@@ -90,7 +90,7 @@ class PostgreSQL
 	{
 		$this->error = none;
 
-		$this->socket->send("Q".$this->pack32(strlen($statement) + 5).$statement."\x00");
+		$this->socket->send(pack("aNZ*", "Q", 4 + strlen($statement) + 1, $statement));
 
 		return $this->getQueryResponse();
 	}
@@ -110,7 +110,7 @@ class PostgreSQL
 
 			if ($tag == "T")
 			{
-				$numfields = $this->unpack16($data[0:2]);
+				[$numfields] = unpack("n", $data[0:2]);
 				$o = 2;
 				while ($numfields > 0)
 				{
@@ -133,16 +133,20 @@ class PostgreSQL
 
 			if ($tag == "D")
 			{
-				$numfields = $this->unpack16($data[0:2]);
+				[$numfields] = unpack("n", $data[0:2]);
 				$o = 2;
 				$f = 0;
 				$row = [];
 				while ($f < $numfields)
 				{
-					$o2 = $this->unpack32($data[$o:$o+4]);
+					[$o2] = unpack("N", $data[$o:$o+4]);
 					$o += 4;
-					$d = $data[$o:$o + $o2];
-					$o += $o2;
+					if ($o2 == 0xffffffff)
+						$d = none;
+					else {
+						$d = $data[$o:$o + $o2];
+						$o += $o2;
+					}
 
 					$row[$fields[$f]] = $d;
 
@@ -166,10 +170,10 @@ class PostgreSQL
 
 	private function recv()
 	{
-		$tag = $this->socket->recv(1);
-		if (!$tag)
+		$data = $this->socket->recv(5);
+		if (!$data)
 			return [];
-		$len = $this->unpack32($this->socket->recv(4));
+		[$tag, $len] = unpack("ZN", $data);
 		if ($len > 4)
 			$data = $this->socket->recv($len - 4);
 		else
@@ -182,25 +186,5 @@ class PostgreSQL
 		$this->error = [];
 		foreach(explode("\x00", $data[0:-2]) as $error)
 			$this->error[$error[0]] = $error[1:];
-	}
-
-	private function pack16($value)
-	{
-		return chr($value >> 8 & 0xff).chr($value & 0xff);
-	}
-
-	private function pack32($value)
-	{
-		return chr($value >> 24 & 0xff).chr($value >> 16 & 0xff).chr($value >> 8 & 0xff).chr($value & 0xff);
-	}
-
-	private function unpack16($data)
-	{
-		return (ord($data[0]) << 8) + ord($data[1]);
-	}
-
-	private function unpack32($data)
-	{
-		return (ord($data[0]) << 24) + (ord($data[1]) << 16) + (ord($data[2]) << 8) + ord($data[3]);
 	}
 }
