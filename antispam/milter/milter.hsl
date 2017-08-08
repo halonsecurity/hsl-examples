@@ -7,13 +7,13 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
 	if (!$socket->connect($host, number($port))) return;
 
-	milter_send($socket, "O", pack_uint32(2).pack_uint32(0x1 | 0x10 | 0x20).pack_uint32(0x7f));
+	milter_send($socket, "O", pack("NNN", 2, 0x1 | 0x10 | 0x20, 0x7f));
 	if (!milter_read($socket, milter_expect_O)) return;
 
 	milter_send($socket, "C",
 			"\x00".
 			(strpos($senderip, ":") != -1 ? "6" : "4").
-			pack_uint16($senderport).
+			pack("n", $senderport).
 			$senderip."\x00");
 	if (!milter_read($socket, milter_expect_c)) return;
 
@@ -55,14 +55,14 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 
 function milter_send($socket, $cmd, $data = "")
 {
-	return $socket->send(pack_uint32(1 + strlen($data)).$cmd.$data);
+	return $socket->send(pack("N", 1 + strlen($data)).$cmd.$data);
 }
 
 function milter_read($socket, $parse)
 {
 	$data = $socket->recv(4);
 	if (!$data) return;
-	$data = $socket->recv(unpack("N", $data));
+	$data = $socket->recv(unpack("N", $data)[0]);
 	if (!$data) return;
 	$payload = $parse($data[0], $data[1:]);
 	if (!is_array($payload)) return;
@@ -113,14 +113,4 @@ function milter_parse($r, $data)
 		];
 	}
 	return [];
-}
-
-function pack_uint16($number)
-{
-	return chr($number >> 8 & 0xff).chr($number & 0xff);
-}
-
-function pack_uint32($number)
-{
-	return chr($number >> 24 & 0xff).chr($number >> 16 & 0xff).chr($number >> 8 & 0xff).chr($number & 0xff);
 }
