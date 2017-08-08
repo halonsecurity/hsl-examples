@@ -62,7 +62,7 @@ function milter_read($socket, $parse)
 {
 	$data = $socket->recv(4);
 	if (!$data) return;
-	$data = $socket->recv(unpack_uint32($data));
+	$data = $socket->recv(unpack("N", $data));
 	if (!$data) return;
 	$payload = $parse($data[0], $data[1:]);
 	if (!is_array($payload)) return;
@@ -105,10 +105,11 @@ function milter_parse($r, $data)
 	}
 	if ($r == "O")
 	{
+		$o = unpack("NNN", $data);
 		return [
-			"version" => unpack_uint32($data[0:4]),
-			"actions" => unpack_uint32($data[4:8]),
-			"protocol" => unpack_uint32($data[8:12]),
+			"version" => $o[0],
+			"actions" => $o[1],
+			"protocol" => $o[2],
 		];
 	}
 	return [];
@@ -122,9 +123,4 @@ function pack_uint16($number)
 function pack_uint32($number)
 {
 	return chr($number >> 24 & 0xff).chr($number >> 16 & 0xff).chr($number >> 8 & 0xff).chr($number & 0xff);
-}
-
-function unpack_uint32($number)
-{
-	return (ord($number[0]) << 24 & 0xff) + (ord($number[1]) << 16 & 0xff) + (ord($number[2]) << 8 & 0xff) + (ord($number[3]) & 0xff);
 }
