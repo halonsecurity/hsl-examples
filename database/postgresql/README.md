@@ -25,7 +25,7 @@ Disconnects the current connection.
 
 **Returns**: None.
 
-## query(statement, params)
+## query(query, params)
 Pass a "prepared" statement to the PostgreSQL server.
 
 **Params**
