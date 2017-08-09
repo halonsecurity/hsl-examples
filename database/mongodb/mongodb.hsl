@@ -100,6 +100,7 @@ class MongoDB
 		$this->socket->close();
 	}
 
+	// http://bsonspec.org/spec.html
 	private function bson_decode($data)
 	{
 		[$l] = unpack("V", $data[0:4]);
