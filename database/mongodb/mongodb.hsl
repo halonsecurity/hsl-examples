@@ -26,7 +26,6 @@ class MongoDB
 
 	function find($query = none, $fieldSelector = none)
 	{
-		$query = none;
 		$requestID = $this->requestID += 1;
 		$responseTo = 0xffffffff;
 		$opCode = 2004; // OP_QUERY
