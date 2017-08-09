@@ -52,41 +52,58 @@ class MongoDB
 				$returnFieldsSelector);
 		$this->socket->send(pack("V", 4 + strlen($data)) . $data);
 
-		$d = unpack("V", $this->socket->recv(4));
-		$data = $this->socket->recv($d[0] - 4);
-
-		$i = 0;
-		[
-			$RrequestID,
-			$RresponseTo,
-		 	$RopCode
-		] = unpack("VVV", $data[$i:$i + 12]);
-		$i += 12;
-
-		if ($RresponseTo != $requestID)
-			return none;
-
-		if ($RopCode != 1) // OP_REPLY
-			return none;
-
-		[
-			$responseFlags,
-			$cursorID1,
-			$cursorID2,
-			$startingFrom,
-			$numberReturned
-		] = unpack("VVVVV", $data[$i:$i + 20]);
-		$i += 20;
-
 		$result = [];
-		while ($i < strlen($data))
+		forever
 		{
-			$l = unpack("V", $data[$i:$i + 4])[0];
-			$result[] = $this->bson_decode($data[$i:$i + $l]);
-			$i += $l;
-		}
+			[$len] = unpack("V", $this->socket->recv(4));
+			$data = $this->socket->recv($len - 4);
 
-		// TODO: request more data for cursorID1 + cursorID2
+			$i = 0;
+			[
+				$RrequestID,
+				$RresponseTo,
+				$RopCode
+			] = unpack("VVV", $data[$i:$i + 12]);
+			$i += 12;
+
+			if ($RresponseTo != $requestID)
+				return none;
+
+			if ($RopCode != 1) // OP_REPLY
+				return none;
+
+			[
+				$responseFlags,
+				$cursorID1,
+				$cursorID2,
+				$startingFrom,
+				$numberReturned
+			] = unpack("VVVVV", $data[$i:$i + 20]);
+			$i += 20;
+
+			while ($i < strlen($data))
+			{
+				$l = unpack("V", $data[$i:$i + 4])[0];
+				$result[] = $this->bson_decode($data[$i:$i + $l]);
+				$i += $l;
+			}
+
+			if ($cursorID1 == 0 and $cursorID2 == 0)
+				break;
+
+			$opCode = 2005;
+
+			$data = pack("VVVVZ*VVV",
+					$requestID,
+					$responseTo,
+					$opCode,
+					0,
+					$fullCollectionName,
+					$numberReturned,
+					$cursorID1,
+					$cursorID2);
+			$this->socket->send(pack("V", 4 + strlen($data)) . $data);
+		}
 
 		return $result;
 	}
