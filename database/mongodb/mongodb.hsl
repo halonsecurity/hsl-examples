@@ -311,6 +311,10 @@ class MongoDB
 				{
 					$o .= pack("CZ*VZ*", 0x02, $k[$i], strlen($v) + 1, $v);
 				}
+				else if ($v == none)
+				{
+					$o .= pack("CZ*", 0x0A, $k[$i]);
+				}
 				else
 					return;
 				$i += 1;
