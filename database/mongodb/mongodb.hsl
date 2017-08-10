@@ -24,7 +24,7 @@ class MongoDB
 		return true;
 	}
 
-	function find($query = none, $fieldSelector = none)
+	function find($query = none, $fieldSelector = none, $offset = 0, $limit = 0)
 	{
 		$requestID = $this->requestID += 1;
 		$responseTo = 0xffffffff;
@@ -32,8 +32,8 @@ class MongoDB
 
 		$flags = 0;
 		$fullCollectionName = $this->database;
-		$numberToSkip = 0;
-		$numberToReturn = 0;
+		$numberToSkip = $offset;
+		$numberToReturn = $limit;
 		$query = $this->bson_encode($query);
 
 		$returnFieldsSelector = "";
@@ -93,6 +93,15 @@ class MongoDB
 			if ($cursorID1 == 0 and $cursorID2 == 0)
 				break;
 
+			if ($numberToReturn < 0)
+				break;
+			if ($numberToReturn == 0)
+				$limit = $numberReturned;
+			else
+				$limit -= $numberReturned;
+			if ($limit <= 0)
+				break;
+
 			$opCode = 2005;
 
 			$data = pack("VVVVZ*VVV",
@@ -101,7 +110,7 @@ class MongoDB
 					$opCode,
 					0,
 					$fullCollectionName,
-					$numberReturned,
+					$limit,
 					$cursorID1,
 					$cursorID2);
 			$this->socket->send(pack("V", 4 + strlen($data)) . $data);
