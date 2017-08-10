@@ -56,6 +56,8 @@ class MongoDB
 		forever
 		{
 			[$len] = unpack("V", $this->socket->recv(4));
+			if ($len == none or $len <= 4)
+				return none;
 			$data = $this->socket->recv($len - 4);
 
 			$i = 0;
@@ -164,7 +166,7 @@ class MongoDB
 				switch ($type)
 				{
 					case 0x01:
-						$output[$key] = unpack("e", $data[$i:$i + 8]);
+						$output[$key] = unpack("e", $data[$i:$i + 8])[0];
 						$i += 8;
 						break;
 					case 0x02:
@@ -263,25 +265,62 @@ class MongoDB
 
 	private function bson_encode($data)
 	{
-		if ($data == none)
-			return pack("Vx", 4 + 1);
-
 		if (!is_array($data))
-			return none;
+			$data = [];
 
-		$buf = "";
-		foreach ($data as $k => $v)
-		{ 
-			if (is_number($v))
-				$buf += pack("CZ*e", 0x01, $k, $v);
-			else if (is_string($v))
-				$buf += pack("CZ*VZ*", 0x02, $k, strlen($v) + 1, $v);
-			else if ($v == none)
-				$buf += pack("CZ*", 0x0a, $k);
-			else
-				return none;
+		$stack = [["k" => array_keys($data), "d" => $data, "i" => 0, "o" => ""]];
+
+		forever
+		{
+			["k" => $k, "d" => $d, "i" => $i, "o" => $o] = $stack[-1:][0];
+
+			if ($i == count($k))
+			{
+				if (count($stack) == 1)
+					return pack("Va*x", 4 + strlen($stack[0]["o"]) + 1, $stack[0]["o"]);
+
+				$last = $stack[-1:][0];
+				$stack = $stack[:-1];
+				$head = $stack[-1:][0];
+				$head["o"] .= pack("Va*x", 4 + strlen($last["o"]) + 1, $last["o"]);
+				$stack = $stack[:-1];
+				$stack[] = $head;
+				continue;
+			}
+
+			$break = false;
+			while (!$break and $i < count($k))
+			{
+				$v = $d[$k[$i]];
+
+				if (is_array($v))
+				{
+					$keys = array_keys($v);
+					$type = (count($v) == 0 or is_number($keys[0])) ? 0x04 : 0x03;
+					$stack = $stack[:-1];
+					$stack[] = ["k" => $k, "d" => $d, "i" => $i + 1, "o" => $o . pack("CZ*", $type, $k[$i]) ];
+					$stack[] = ["k" => $keys, "d" => $v, "i" => 0, "o" => ""];
+					$break = true;
+					continue;
+				}
+				else if (is_number($v))
+				{
+					$o .= pack("CZ*e", 0x01, $k[$i], $v);
+				}
+				else if (is_string($v))
+				{
+					$o .= pack("CZ*VZ*", 0x02, $k[$i], strlen($v) + 1, $v);
+				}
+				else
+					return;
+				$i += 1;
+			}
+
+			if ($break)
+				continue;
+
+			$stack = $stack[:-1];
+			$stack[] = ["k" => $k, "d" => $d, "i" => $i, "o" => $o];
 		}
-
-		return pack("Va*x", 4 + strlen($buf) + 1, $buf);
 	}
 }
