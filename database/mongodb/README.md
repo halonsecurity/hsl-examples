@@ -24,12 +24,14 @@ Disconnects the current connection.
 
 **Returns**: None.
 
-## find(query[, fieldSelector])
+## find(query[, fieldSelector[, offset[, limit]]])
 Execute query on the MongoDB server.
 
 **Params**
 
 - query `array` - Query to be executed.
 - fieldSelector `array` - Field selector.
+- offset `number` - The offset. The default is 0 (no offset).
+- limit `number` - The offset. The default is 0 (no limit).
 
 **Returns**: response as array, None on error.
