@@ -110,21 +110,23 @@ class PostgreSQL
 
 			if ($tag == "T")
 			{
-				[$numfields] = unpack("n", $data[0:2]);
+				[$numfields] = unpack("n", $data, 0);
 				$o = 2;
 				while ($numfields > 0)
 				{
-					$o2 = strpos($data[$o:], "\x00");
-					$col = $data[$o:$o + $o2];
-					$o += $o2 + 1;
+					[$col] = unpack("Z*", $data, $o);
+					$o += strlen($col) + 1;
 					$fields[] = $col;
 
+					/*
 					$tableoid = $data[$o:$o+=4];
 					$colno = $data[$o:$o+=2];
 					$typeoid = $data[$o:$o+=4];
 					$typelen = $data[$o:$o+=2];
 					$typmod = $data[$o:$o+=4];
 					$format = $data[$o:$o+=2];
+					*/
+					$o += 18;
 
 					$numfields -= 1;
 				}
@@ -133,13 +135,13 @@ class PostgreSQL
 
 			if ($tag == "D")
 			{
-				[$numfields] = unpack("n", $data[0:2]);
+				[$numfields] = unpack("n", $data, 0);
 				$o = 2;
 				$f = 0;
 				$row = [];
 				while ($f < $numfields)
 				{
-					[$o2] = unpack("N", $data[$o:$o+4]);
+					[$o2] = unpack("N", $data, $o);
 					$o += 4;
 					if ($o2 == 0xffffffff)
 						$d = none;

@@ -65,7 +65,7 @@ class MongoDB
 				$RrequestID,
 				$RresponseTo,
 				$RopCode
-			] = unpack("VVV", $data[$i:$i + 12]);
+			] = unpack("VVV", $data, $i);
 			$i += 12;
 
 			if ($RresponseTo != $requestID)
@@ -80,13 +80,13 @@ class MongoDB
 				$cursorID2,
 				$startingFrom,
 				$numberReturned
-			] = unpack("VVVVV", $data[$i:$i + 20]);
+			] = unpack("VVVVV", $data, $i);
 			$i += 20;
 
 			while ($i < strlen($data))
 			{
-				$l = unpack("V", $data[$i:$i + 4])[0];
-				$result[] = $this->bson_decode($data[$i:$i + $l]);
+				$l = unpack("V", $data, $i)[0];
+				$result[] = $this->bson_decode($data, $i);
 				$i += $l;
 			}
 
@@ -129,10 +129,10 @@ class MongoDB
 	}
 
 	// http://bsonspec.org/spec.html
-	private function bson_decode($data)
+	private function bson_decode($data, $i)
 	{
-		[$l] = unpack("V", $data[0:4]);
-		$stack = [["output" => [], "i" => 4, "l" => $l]]; 
+		[$l] = unpack("V", $data, $i);
+		$stack = [["output" => [], "i" => $i + 4, "l" => $i + $l]];
 
 		forever
 		{
@@ -159,7 +159,7 @@ class MongoDB
 			$break = false;
 			while (!$break and $i < $l)
 			{
-				[$type] = unpack("c", $data[$i:]);
+				[$type] = unpack("c", $data, $i);
 				$i += 1;
 
 				if ($type == 0)
@@ -169,32 +169,31 @@ class MongoDB
 					break;
 				}
 
-				[$key] = unpack("Z*", $data[$i:]);
+				[$key] = unpack("Z*", $data, $i);
 				$i += strlen($key) + 1;
 
 				switch ($type)
 				{
 					case 0x01:
-						$output[$key] = unpack("e", $data[$i:$i + 8])[0];
+						$output[$key] = unpack("e", $data, $i)[0];
 						$i += 8;
 						break;
 					case 0x02:
-						[$length] = unpack("V", $data[$i:$i + 4]);
+						[$length] = unpack("V", $data, $i);
 						$i += 4;
-						$value = $data[$i:$i + $length - 1];
+						$output[$key] = $data[$i:$i + $length - 1];
 						$i += $length;
-						$output[$key] = $value;
 						break;
 					case 0x03:
 					case 0x04:
-						[$length] = unpack("V", $data[$i:]);
+						[$length] = unpack("V", $data, $i);
 						$stack = $stack[:-1];
 						$stack[] = ["output" => $output, "i" => $i + $length, "l" => $l, "key" => $key];
 						$stack[] = ["output" => [], "i" => $i + 4, "l" => $i + $length];
 						$break = true;
 						break;
 					case 0x05:
-						[$length] = unpack("V", $data[$i:$i + 4]);
+						[$length] = unpack("V", $data, $i);
 						$i += 4 + $length + 1;
 						echo "unsupported BSON type (Binary data)";
 						break;
@@ -202,9 +201,8 @@ class MongoDB
 						echo "unsupported BSON type (Undefined)";
 						break;
 					case 0x07:
-						$value = $data[$i:$i + 12];
+						$output[$key] = unpack("H24", $data, $i)[0];
 						$i += 12;
-						$output[$key] = unpack("H*", $value)[0];
 						break;
 					case 0x07:
 					case 0x08:
@@ -220,32 +218,32 @@ class MongoDB
 						$output[$key] = none;
 						break;
 					case 0x0b:
-						[$pattern, $options] = unpack("Z*Z*", $data[$i:]);
+						[$pattern, $options] = unpack("Z*Z*", $data, $i);
 						$i += strlen($pattern) + strlen($options) + 2;
 						echo "unsupported BSON type (Regular expression)";
 						break;
 					case 0x0c:
-						[$length] = unpack("V", $data[$i:$i + 4]);
+						[$length] = unpack("V", $data, $i);
 						$i += 4 + $length + 12;
 						echo "unsupported BSON type (DBPointer)";
 						break;
 					case 0x0d:
-						[$length] = unpack("V", $data[$i:$i + 4]);
+						[$length] = unpack("V", $data, $i);
 						$i += 4 + $length;
 						echo "unsupported BSON type (JavaScript code)";
 						break;
 					case 0x0e:
-						[$length] = unpack("V", $data[$i:$i + 4]);
+						[$length] = unpack("V", $data, $i);
 						$i += 4 + $length;
 						echo "unsupported BSON type (Symbol)";
 						break;
 					case 0x0f:
-						[$length] = unpack("V", $data[$i:$i + 4]);
+						[$length] = unpack("V", $data, $i);
 						$i += $length;
 						echo "unsupported BSON type (JavaScript code w/ scope)";
 						break;
 					case 0x10: /* int32 */
-						[$v] = unpack("V", $data[$i:]);
+						[$v] = unpack("V", $data, $i);
 						$i += 4;
 						$output[$key] = $v;
 						break;
