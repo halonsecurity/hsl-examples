@@ -172,14 +172,24 @@ class PostgreSQL
 
 	private function recv()
 	{
-		$data = $this->socket->recv(5);
-		if (!$data)
+		[$tag, $len] = unpack("ZN", $this->socket->recv(5));
+		if ($tag == none or $len == none)
 			return [];
-		[$tag, $len] = unpack("ZN", $data);
-		if ($len > 4)
-			$data = $this->socket->recv($len - 4);
-		else
-			$data = "";
+		if ($len <= 4)
+			return [$tag, ""];
+		$len -= 4;
+
+		$data = "";
+		while ($len > 0)
+		{
+			$chunk = $this->socket->recv($len > 65535 ? 65535 : $len);
+			if ($chunk == none)
+				return none;
+			$data .= $chunk;
+			$len -= strlen($chunk);
+			$chunk = "";
+		}
+
 		return [$tag, $data];
 	}
 

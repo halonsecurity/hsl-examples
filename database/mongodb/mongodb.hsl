@@ -58,7 +58,18 @@ class MongoDB
 			[$len] = unpack("V", $this->socket->recv(4));
 			if ($len == none or $len <= 4)
 				return none;
-			$data = $this->socket->recv($len - 4);
+			$len -= 4;
+
+			$data = "";
+			while ($len > 0)
+			{
+				$chunk = $this->socket->recv($len > 65535 ? 65535 : $len);
+				if ($chunk == none)
+					return none;
+				$data .= $chunk;
+				$len -= strlen($chunk);
+				$chunk = "";
+			}
 
 			$i = 0;
 			[
