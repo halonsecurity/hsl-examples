@@ -2,7 +2,7 @@ $cacheSize = 10000;
 
 function mta_sts_fetch_new_policy($policydomain)
 {
-	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.json", [
+	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.txt", [
 		"ssl_verify_host" => true,
 		"ssl_default_ca" => true,
 		"connect_timeout" => 5,
