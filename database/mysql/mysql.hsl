@@ -1,0 +1,424 @@
+class MySQL
+{
+	private $address = none;
+	private $port = none;
+	private $timeout = none;
+	private $socket = none;
+	private $user = none;
+	private $pass = none;
+	private $database = none;
+	private $error = none;
+	private $capabilities = 0;
+
+	constructor($address, $user, $pass, $database, $opts = [])
+	{
+		$this->address = $address;
+		$this->user = $user;
+		$this->pass = $pass;
+		$this->database = $database;
+		$this->port = $opts["port"] ?? 3306;
+		$this->timeout = $opts["timeout"] ?? 30;
+	}
+
+	function connect()
+	{
+		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		if (!$this->socket->settimeout($this->timeout)) return;
+		if (!$this->socket->connect($this->address, $this->port)) return;
+
+		if (!($payload = $this->recv())) return;
+
+		[
+			$version,
+			$serverVersion,
+			$connectionId,
+			$challengePart1,
+			$fill,
+			$capabilities,
+			$charset,
+			$statusFlag,
+			$reserved,
+			$challengePart2,
+		] = unpack("CZ*Va8CvCva13a12", $payload);
+
+		if ($version != 10)
+			return;
+		$this->capabilities = $capabilities;
+
+		if (!$this->send(1, pack("VVCx23Z*Ca*Z*",
+						0x8000 | // CLIENT_SECURE_CONNECTION
+						0x2000 | // CLIENT_TRANSACTIONS
+						0x0400 | // CLIENT_INTERACTIVE
+						0x0200 | // CLIENT_PROTOCOL_41
+						0x0008 | // CLIENT_CONNECT_WITH_DB
+						0x0004 | // CLIENT_LONG_FLAG
+						0x0001 , // CLIENT_LONG_PASSWORD
+						1,
+						33,
+						$this->user,
+						20,
+						$this->mysql_native_password($challengePart1 . $challengePart2, $this->pass),
+						$this->database
+						))) return;
+
+		if (!($payload = $this->recv())) return;
+
+		return (ord($payload[0]) == 0);
+	}
+
+	function disconnect()
+	{
+		if (!$this->socket)
+			return;
+
+		$this->socket->shutdown("SHUT_RDWR");
+		$this->socket->close();
+	}
+
+	function getLastError()
+	{
+		return $this->error ?? none;
+	}
+
+	function query($query, $params = [])
+	{
+		$this->error = none;
+
+		// COM_STMT_PREPARE
+		if (!$this->send(0, pack("Ca*", 0x16, $query))) return;
+
+		if (!($payload = $this->recv())) return;
+
+		[$status, $statementid, $numcols, $numparams, $filler, $warning] = unpack("CVvvCv", $payload);
+
+		$params2 = [];
+		if ($numparams and !([$params2] = $this->getResultsetColumns($numparams))) return;
+
+		$columns = [];
+		if ($numcols and !([$columns] = $this->getResultsetColumns($numcols))) return;
+
+		$args = "";
+		if (count($params) > 0)
+		{
+			$bitmap = [];
+			$types = "";
+			$values = "";
+
+			foreach ($params as $f => $a)
+			{
+				$bi = ($f / 8);
+				if (!isset($bitmap[$bi])) $bitmap[$bi] = 0;
+				if ($a == none)
+					$bitmap[$bi] = $bitmap[$bi] | (1 << ($f % 8));
+
+				$types .= "\x0f\x00";
+
+				if ($a != none)
+					$values .= pack("Ca*", strlen($a), $a);
+			}
+
+			$args = pack("C*", ...$bitmap).pack("Ca*a*", 0x1, $types, $values);
+		}
+
+		// COM_STMT_EXECUTE
+		if (!$this->send(0, pack("CVCVa*", 0x17, $statementid, 0x00, 1, $args))) return;
+
+		return $this->getBinaryResultset();
+	}
+
+	function execute($statement)
+	{
+		$this->error = none;
+
+		// COM_QUERY
+		if (!$this->send(0, pack("Ca*", 0x03, $statement))) return;
+
+		return $this->getTextResultset();
+	}
+
+	private function getBinaryResultset()
+	{
+		if (!($payload = $this->recv())) return;
+
+		$fields = 0;
+		switch (ord($payload[0]))
+		{
+			case 0x00:
+			{
+				[$l, $i] = $this->unpack_lenenc_int($payload, 1);
+				return $l;
+			}
+			default:
+				$fields = ord($payload[0]);
+		}
+
+		if (!([$columns, $types] = $this->getResultsetColumns($fields))) return;
+
+		$result = [];
+		while (1)
+		{
+			if (($payload = $this->recv()) == none) return;
+			if ($payload == "") continue;
+
+			if (ord($payload[0]) == 0xfe and strlen($payload) < 9)
+			{
+				// make sure it's an EOF
+				if ($this->capabilities & 0x200)
+					[$warning, $status] = unpack("vv", $payload, 1);
+				break;
+			}
+
+			$bitmaplen = floor(($fields + 7 + 2) / 8);
+			$bitmap = unpack("C*", $payload[1:1+$bitmaplen]);
+
+			$row = [];
+			$i = 1 + $bitmaplen;
+			$f = 0;
+			while ($f < $fields)
+			{
+				if (($bitmap[(($f + 2) / 8)] >> (($f + 2) % 8)) & 0x1)
+				{
+					$row[$columns[$f]] = none;
+					$f += 1;
+					continue;
+				}
+
+				switch ($types[$f])
+				{
+					case 0x03: // MYSQL_TYPE_LONG
+						[$l] = unpack("V", $payload, $i);
+						$i += 4;
+						$row[$columns[$f]] = $l;
+					break;
+					case 0x06: // MYSQL_TYPE_NULL
+						$row[$columns[$f]] = none;
+					break;
+					case 0x07: // MYSQL_TYPE_TIMESTAMP
+						[$l] = unpack("C", $payload, $i);
+						$i += 1;
+						if ($l == 7)
+						{
+							$pack = unpack("vCCCCC", $payload, $i);
+							$row[$columns[$f]] = $pack[0]."-".$pack[1]."-".$pack[2]." ".$pack[3].":".$pack[4].":".$pack[5];
+						}
+						if ($l == 9)
+						{
+							$pack = unpack("vCCCCCV", $payload, $i);
+							$row[$columns[$f]] = $pack[0]."-".$pack[1]."-".$pack[2]." ".$pack[3].":".$pack[4].":".$pack[5].".".$pack[6];
+						}
+						$i += $l;
+					break;
+					case 0x08: // MYSQL_TYPE_LONGLONG
+						[$l, $l2] = unpack("VV", $payload, $i);
+						$l += ($l2 & 0xffffffff) << 32;
+						$i += 8;
+						$row[$columns[$f]] = $l;
+					break;
+					case 0xf6: // MYSQL_TYPE_NEWDECIMAL:
+						[$l] = unpack("C", $payload, $i);
+						$i += 1;
+						$i += $l;
+					break;
+					case 0xfb: // MYSQL_TYPE_LONG_BLOB
+					case 0xfc: // MYSQL_TYPE_BLOB
+					case 0xfd: // MYSQL_TYPE_VAR_STRING
+					case 0xfe: // MYSQL_TYPE_STRING
+						[$l, $i] = $this->unpack_lenenc_int($payload, $i);
+						$row[$columns[$f]] = $payload[$i:$i + $l];
+						$i += $l;
+					break;
+					default:
+						$this->error = "Cant handle type ".$types[$f]." for field '".$columns[$f]."'";
+						return none;
+				}
+
+				$f += 1;
+			}
+			$result[] = $row;
+		}
+
+		return $result;
+	}
+
+	private function getTextResultset()
+	{
+		if (!($payload = $this->recv())) return;
+
+		$fields = 0;
+		switch (ord($payload[0]))
+		{
+			case 0x00:
+			{
+				[$l, $i] = $this->unpack_lenenc_int($payload, 1);
+				return $l;
+			}
+			default:
+				$fields = ord($payload[0]);
+		}
+
+		if (!($columns = $this->getResultsetColumns($fields))) return;
+
+		$result = [];
+		while (1)
+		{
+			if (($payload = $this->recv()) == none) return;
+			if ($payload == "") continue;
+
+			if (ord($payload[0]) == 0xfe and strlen($payload) < 9)
+			{
+				// make sure it's an EOF
+				if ($this->capabilities & 0x200)
+					[$warning, $status] = unpack("vv", $payload, 1);
+				break;
+			}
+
+			$i = 0;
+			$f = 0;
+			while ($f < $fields)
+			{
+				[$l] = unpack("C", $payload, $i);
+
+				if ($l == 0xfb)
+				{
+					$i += 1;
+					$row[$columns[$f]] = none;
+					$f += 1;
+					continue;
+				}
+
+				[$l, $i] = $this->unpack_lenenc_int($payload, $i);
+				$row[$columns[$f]] = $payload[$i:$i + $l];
+				$i += $l;
+				$f += 1;
+			}
+			$result[] = $row;
+		}
+
+		return $result;
+	}
+
+	private function getResultsetColumns($fields)
+	{
+		$columns = [];
+		$types = [];
+		$f = 0;
+		while ($f < $fields)
+		{
+			if (!($payload = $this->recv())) return;
+
+			// catalog
+			$i = 0;
+			[$l] = unpack("C", $payload, $i);
+			$i += 1 + $l;
+
+			// schema
+			[$l] = unpack("C", $payload, $i);
+			$i += 1 + $l;
+
+			// table
+			[$l] = unpack("C", $payload, $i);
+			$i += 1 + $l;
+
+			// org_table
+			[$l] = unpack("C", $payload, $i);
+			$i += 1 + $l;
+
+			// name
+			[$l] = unpack("C", $payload, $i);
+			$columns[] = $payload[$i+1:$i+1+$l];
+			$i += 1 + $l;
+
+			// org_name
+			[$l] = unpack("C", $payload, $i);
+			$i += 1 + $l;
+
+			[$t] = unpack("C", $payload, $i + 1 + 2 + 4);
+			$types[] = $t;
+
+			$f += 1;
+		}
+		if (!($payload = $this->recv())) return;
+		if (ord($payload[0]) != 0xfe) return;
+		return [$columns, $types];
+	}
+
+	private function recv()
+	{
+		$payload = "";
+
+		while (true)
+		{
+			[$length, $length2, $seqId] = unpack("vCC", $this->socket->recv(4, "MSG_WAITALL"));
+			if ($length == none or $length2 == none or $seqId == none)
+				return none;
+
+			$len2 = $len = ($length + (($length2 & 0xff) << 16));
+
+			while ($len > 0)
+			{
+				$chunk = $this->socket->recv($len > 65535 ? 65535 : $len);
+				if ($chunk == none)
+					return none;
+				$payload .= $chunk;
+				$len -= strlen($chunk);
+				$chunk = "";
+			}
+
+			if ($len2 == 0xffffff)
+				continue;
+
+			if (ord($payload[0]) == 0xff)
+			{
+				if ($this->capabilities & 0x200)
+					[$header, $errorcode, $sqlstatemarker, $sqlstate, $errormessage] = unpack("CvZZ5Z*", $payload);
+				else
+					[$header, $errorcode, $errormessage] = unpack("CvZ*", $payload);
+				$this->error = $errormessage;
+				return none;
+			}
+
+			return $payload;
+		}
+	}
+
+	private function send($seqId, $pkt)
+	{
+		$len = strlen($pkt);
+		$l = $this->socket->send(pack("vCC", ($len & 0xffff), $len >> 16, $seqId).$pkt);
+		return ($l == $len + 4);
+	}
+
+	private function mysql_native_password($challenge, $password)
+	{
+		$p1 = pack("H*", sha1($password));
+		$p2 = pack("H*", sha1($challenge . pack("H*", sha1(pack("H*", sha1($password))))));
+		$data = "";
+		foreach(unpack("C*", $p1) as $i => $x)
+			$data .= chr($x ^ ord($p2[$i]));
+		return $data;
+	}
+
+	private function unpack_lenenc_int($payload, $i)
+	{
+		[$l] = unpack("C", $payload, $i);
+		$i += 1;
+		switch ($l)
+		{
+			case 0xfc: // 2 byte
+				[$l] = unpack("v", $payload, $i);
+				$i += 2;
+				break;
+			case 0xfd: // 3 byte
+				[$l, $l2] = unpack("vC", $payload, $i);
+				$l += ($l2 & 0xff) << 16;
+				$i += 3;
+				break;
+			case 0xfe: // 8 byte
+				[$l, $l2] = unpack("VV", $payload, $i);
+				$l += ($l2 & 0xffffffff) << 32;
+				$i += 8;
+				break;
+		}
+		return [$l, $i];
+	}
+}
