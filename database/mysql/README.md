@@ -13,7 +13,7 @@ MySQL client class.
 
 The following options are available in the **opts** array.
 
-- port `number` - TCP port. The default is 5432.
+- port `number` - TCP port. The default is 3306.
 - timeout `number` - Timeout in seconds. The default is 30 seconds.
 
 ## connect()
