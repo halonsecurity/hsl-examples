@@ -34,7 +34,7 @@ Pass a "prepared" statement to the MySQL server.
 - statement `string` - Query to be executed.
 - params `array` - Params to be executed.
 
-**Returns**: response as array (SELECT) or number of affected rows (eg. UPDATE), None on error.
+**Returns**: response (SELECT) as array or number of affected rows (eg. UPDATE), None on error.
 
 ## execute(statement)
 Pass a statement as-is to the MySQL server.
@@ -43,7 +43,7 @@ Pass a statement as-is to the MySQL server.
 
 - statement `string` - Query to be executed.
 
-**Returns**: response as array (SELECT) or number of affected rows (eg. UPDATE), None on error.
+**Returns**: response (SELECT) as array (all values are strings) or the number of affected rows (eg. UPDATE), None on error.
 
 ## getLastError()
 Returns the last error that was sent by the server.
