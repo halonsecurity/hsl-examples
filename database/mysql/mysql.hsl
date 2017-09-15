@@ -33,13 +33,11 @@ class MySQL
 			$serverVersion,
 			$connectionId,
 			$challengePart1,
-			$fill,
 			$capabilities,
 			$charset,
 			$statusFlag,
-			$reserved,
 			$challengePart2,
-		] = unpack("CZ*Va8CvCva13a12", $payload);
+		] = unpack("CZ*Va8xvCvx13a12x", $payload);
 
 		if ($version != 10)
 			return;
@@ -89,7 +87,7 @@ class MySQL
 
 		if (!($payload = $this->recv())) return;
 
-		[$status, $statementid, $numcols, $numparams, $filler, $warning] = unpack("CVvvCv", $payload);
+		[$status, $statementid, $numcols, $numparams, $warning] = unpack("CVvvxv", $payload);
 
 		$params2 = [];
 		if ($numparams and !([$params2] = $this->getResultsetColumns($numparams))) return;
