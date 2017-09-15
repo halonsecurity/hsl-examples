@@ -114,7 +114,7 @@ class MySQL
 				$types .= "\x0f\x00";
 
 				if ($a != none)
-					$values .= pack("Ca*", strlen($a), $a);
+					$values .= "\xfc".pack("va*", strlen($a), $a);
 			}
 
 			$args = pack("C*", ...$bitmap).pack("Ca*a*", 0x1, $types, $values);
@@ -182,13 +182,27 @@ class MySQL
 					$f += 1;
 					continue;
 				}
-
 				switch ($types[$f])
 				{
+					case 0x01: // MYSQL_TYPE_TINY
+						[$l] = unpack("C", $payload, $i);
+						$row[$columns[$f]] = $l;
+						$i += 1;
+					break;
+					case 0x02: // MYSQL_TYPE_SHORT
+						[$l] = unpack("v", $payload, $i);
+						$row[$columns[$f]] = $l;
+						$i += 2;
+					break;
 					case 0x03: // MYSQL_TYPE_LONG
 						[$l] = unpack("V", $payload, $i);
-						$i += 4;
 						$row[$columns[$f]] = $l;
+						$i += 4;
+					break;
+					case 0x05: // MYSQL_TYPE_DOUBLE
+						[$l] = unpack("e", $payload, $i);
+						$row[$columns[$f]] = $l;
+						$i += 8;
 					break;
 					case 0x06: // MYSQL_TYPE_NULL
 						$row[$columns[$f]] = none;
@@ -199,20 +213,71 @@ class MySQL
 						if ($l == 7)
 						{
 							$pack = unpack("vCCCCC", $payload, $i);
-							$row[$columns[$f]] = $pack[0]."-".$pack[1]."-".$pack[2]." ".$pack[3].":".$pack[4].":".$pack[5];
+							$row[$columns[$f]] = $pack[0]."-".$this->np($pack[1])."-".$this->np($pack[2])." ".$this->np($pack[3]).":".$this->np($pack[4]).":".$this->np($pack[5]);
 						}
-						if ($l == 9)
+						if ($l == 11)
 						{
 							$pack = unpack("vCCCCCV", $payload, $i);
-							$row[$columns[$f]] = $pack[0]."-".$pack[1]."-".$pack[2]." ".$pack[3].":".$pack[4].":".$pack[5].".".$pack[6];
+							$row[$columns[$f]] = $pack[0]."-".$this->np($pack[1])."-".$this->np($pack[2])." ".$this->np($pack[3]).":".$this->np($pack[4]).":".$this->np($pack[5]).".".$this->np($pack[6], 6);
 						}
 						$i += $l;
 					break;
 					case 0x08: // MYSQL_TYPE_LONGLONG
 						[$l, $l2] = unpack("VV", $payload, $i);
-						$l += ($l2 & 0xffffffff) << 32;
-						$i += 8;
+						$l += $l2 * (2 ** 32);
 						$row[$columns[$f]] = $l;
+						$i += 8;
+					break;
+					case 0x09: // MYSQL_TYPE_INT24
+						[$l, $l2] = unpack("vC", $payload, $i);
+						$l += ($l2 & 0xff) << 16;
+						$row[$columns[$f]] = $l;
+						$i += 4;
+					break;
+					case 0x0a: // MYSQL_TYPE_DATE
+						[$l] = unpack("C", $payload, $i);
+						$i += 1;
+						if ($l == 4)
+						{
+							$pack = unpack("vCC", $payload, $i);
+							$row[$columns[$f]] = $pack[0]."-".$this->np($pack[1])."-".$this->np($pack[2]);
+						}
+						$i += $l;
+					break;
+					case 0x0b: // MYSQL_TYPE_TIME
+						[$l] = unpack("C", $payload, $i);
+						$i += 1;
+						if ($l == 8)
+						{
+							$pack = unpack("CVCCC", $payload, $i);
+							$row[$columns[$f]] = ($pack[0]?"-":"").(($pack[1] * 24) + $pack[2]).":".$this->np($pack[3]).":".$this->np($pack[4]);
+						}
+						if ($l == 12)
+						{
+							$pack = unpack("CVCCCV", $payload, $i);
+							$row[$columns[$f]] = ($pack[0]?"-":"").(($pack[1] * 24) + $pack[2]).":".$this->np($pack[3]).":".$this->np($pack[4]).".".$this->np($pack[5], 6);
+						}
+						$i += $l;
+					break;
+					case 0x0c: // MYSQL_TYPE_DATETIME
+						[$l] = unpack("C", $payload, $i);
+						$i += 1;
+						if ($l == 7)
+						{
+							$pack = unpack("vCCCCC", $payload, $i);
+							$row[$columns[$f]] = $pack[0]."-".$this->np($pack[1])."-".$this->np($pack[2])." ".$this->np($pack[3]).":".$this->np($pack[4]).":".$this->np($pack[5]);
+						}
+						if ($l == 11)
+						{
+							$pack = unpack("vCCCCCV", $payload, $i);
+							$row[$columns[$f]] = $pack[0]."-".$this->np($pack[1])."-".$this->np($pack[2])." ".$this->np($pack[3]).":".$this->np($pack[4]).":".$this->np($pack[5]).".".$this->np($pack[6], 6);
+						}
+						$i += $l;
+					break;
+					case 0x0d:
+						[$l] = unpack("v", $payload, $i);
+						$row[$columns[$f]] = $l;
+						$i += 1;
 					break;
 					case 0xf6: // MYSQL_TYPE_NEWDECIMAL:
 						[$l] = unpack("C", $payload, $i);
@@ -420,5 +485,10 @@ class MySQL
 				break;
 		}
 		return [$l, $i];
+	}
+
+	private function np($v, $i = 2)
+	{
+		return (str_repeat("0", $i) . $v)[-$i:];
 	}
 }
