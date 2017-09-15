@@ -279,11 +279,7 @@ class MySQL
 						$row[$columns[$f]] = $l;
 						$i += 1;
 					break;
-					case 0xf6: // MYSQL_TYPE_NEWDECIMAL:
-						[$l] = unpack("C", $payload, $i);
-						$i += 1;
-						$i += $l;
-					break;
+					case 0xf6: // MYSQL_TYPE_NEWDECIMAL
 					case 0xfb: // MYSQL_TYPE_LONG_BLOB
 					case 0xfc: // MYSQL_TYPE_BLOB
 					case 0xfd: // MYSQL_TYPE_VAR_STRING
