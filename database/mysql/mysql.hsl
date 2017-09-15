@@ -5,16 +5,16 @@ class MySQL
 	private $timeout = none;
 	private $socket = none;
 	private $user = none;
-	private $pass = none;
+	private $password = none;
 	private $database = none;
 	private $error = none;
 	private $capabilities = 0;
 
-	constructor($address, $user, $pass, $database, $opts = [])
+	constructor($address, $user, $password, $database, $opts = [])
 	{
 		$this->address = $address;
 		$this->user = $user;
-		$this->pass = $pass;
+		$this->password = $password;
 		$this->database = $database;
 		$this->port = $opts["port"] ?? 3306;
 		$this->timeout = $opts["timeout"] ?? 30;
@@ -57,7 +57,7 @@ class MySQL
 						33,
 						$this->user,
 						20,
-						$this->mysql_native_password($challengePart1 . $challengePart2, $this->pass),
+						$this->mysql_native_password($challengePart1 . $challengePart2, $this->password),
 						$this->database
 						))) return;
 
