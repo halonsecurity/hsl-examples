@@ -55,7 +55,7 @@ class MongoDB
 		$result = [];
 		forever
 		{
-			[$len] = unpack("V", $this->socket->recv(4));
+			[$len] = unpack("V", $this->socket->recv(4, "MSG_WAITALL"));
 			if ($len == none or $len <= 4)
 				return none;
 			$len -= 4;

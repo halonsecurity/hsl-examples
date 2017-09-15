@@ -172,7 +172,7 @@ class PostgreSQL
 
 	private function recv()
 	{
-		[$tag, $len] = unpack("ZN", $this->socket->recv(5));
+		[$tag, $len] = unpack("ZN", $this->socket->recv(5, "MSG_WAITALL"));
 		if ($tag == none or $len == none)
 			return [];
 		if ($len <= 4)
