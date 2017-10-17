@@ -1,3 +1,0 @@
-*.hsl linguist-language=javascript
-rewrite/urlrewrite/urlrewrite.hsl text
-generate.py linguist-generated=true
