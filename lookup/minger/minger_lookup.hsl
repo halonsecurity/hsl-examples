@@ -1,17 +1,3 @@
-function hex_decode($input)
-{
-	$result = "";
-	$i = 0;
-
-	while ($i < strlen($input))
-	{
-		$result .= chr(number("0x". $input[$i:$i + 2]));
-		$i += 2;
-	}
-
-	return $result;
-}
-
 function minger_lookup($host, $address, $opts = [])
 {
 	$socket = Socket(Socket::AF($host), "SOCK_DGRAM");
@@ -20,7 +6,7 @@ function minger_lookup($host, $address, $opts = [])
 
 	$query = $address;
 	if (isset($opts["secret"]))
-		$query .= " d=" . base64_encode(hex_decode(md5($opts["secret"] . ":" . $address)));
+		$query .= " d=" . base64_encode(pack("H*", md5($opts["secret"] . ":" . $address)));
 
 	if (!$socket->send($query)) return;
 	if (!$response = $socket->recv(1024)) return;
