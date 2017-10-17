@@ -1,0 +1,2 @@
+*.hsl linguist-language=php
+generate.py linguist-generated=true
