@@ -3,6 +3,7 @@ class Syslog
 	private $facility = none;
 	private $socket = none;
 	private $hostname = none;
+	private $application = none;
 
 	constructor($host, $opts = [])
 	{
@@ -37,6 +38,7 @@ class Syslog
 			];
 		$this->facility = $facilities[$opts["facility"]] ?? $facilities["LOG_MAIL"];
 		$this->hostname = $opts["hostname"] ?? gethostname(); 
+		$this->application = $opts["application"] ?? "halon"; 
 	}
 	function logger($priority, $message)
 	{
@@ -51,7 +53,11 @@ class Syslog
 			"debug" =>            (7),
 		];
 		$priority = $priorities[$priority] ?? $priorities["debug"];
-		$timestamp = strftime("%b %d %H:%M:%S", timelocal());
-		$this->socket->send("<".($this->facility + $priority).">$timestamp ".$this->hostname." smtpd: $message");
+		$timestamp = ;
+		return $this->socket->send("<" . ($this->facility + $priority) . ">" .
+			strftime("%b %d %H:%M:%S", timelocal()) . " " .
+			$this->hostname . " " .
+			$this->application . ": " .
+			$message) > 0;
 	}
 }
