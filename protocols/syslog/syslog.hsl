@@ -1,0 +1,57 @@
+class Syslog
+{
+	private $facility = none;
+	private $socket = none;
+	private $hostname = none;
+
+	constructor($host, $opts = [])
+	{
+		$this->socket = Socket(Socket::AF($host), "SOCK_DGRAM");
+		$this->socket->settimeout(1);
+		$this->socket->connect($host, $opts["port"] ?? 514);
+
+		$facilities = [
+			"LOG_KERN" =>         (0<<3),
+			"LOG_USER" =>         (1<<3),
+			"LOG_MAIL" =>         (2<<3),
+			"LOG_DAEMON" =>       (3<<3),
+			"LOG_AUTH" =>         (4<<3),
+			"LOG_SYSLOG" =>       (5<<3),
+			"LOG_LPR" =>          (6<<3),
+			"LOG_NEWS" =>         (7<<3),
+			"LOG_UUCP" =>         (8<<3),
+			"LOG_CRON" =>         (9<<3),
+			"LOG_AUTHPRIV" =>     (10<<3),
+			"LOG_FTP" =>          (11<<3),
+			"LOG_NTP" =>          (12<<3),
+			"LOG_SECURITY" =>     (13<<3),
+			"LOG_CONSOLE" =>      (14<<3),
+			"LOG_LOCAL0" =>       (16<<3),
+			"LOG_LOCAL1" =>       (17<<3),
+			"LOG_LOCAL2" =>       (18<<3),
+			"LOG_LOCAL3" =>       (19<<3),
+			"LOG_LOCAL4" =>       (20<<3),
+			"LOG_LOCAL5" =>       (21<<3),
+			"LOG_LOCAL6" =>       (22<<3),
+			"LOG_LOCAL7" =>       (23<<3),
+			];
+		$this->facility = $facilities[$opts["facility"]] ?? $facilities["LOG_MAIL"];
+		$this->hostname = $opts["hostname"] ?? gethostname(); 
+	}
+	function logger($priority, $message)
+	{
+		$priorities = [
+			"emerg" =>            (0),
+			"alert" =>            (1),
+			"crit" =>             (2),
+			"err" =>              (3),
+			"warning" =>          (4),
+			"notice" =>           (5),
+			"info" =>             (6),
+			"debug" =>            (7),
+		];
+		$priority = $priorities[$priority] ?? $priorities["debug"];
+		$timestamp = strftime("%b %d %H:%M:%S", timelocal());
+		$this->socket->send("<".($this->facility + $priority).">$timestamp ".$this->hostname." smtpd: $message");
+	}
+}
