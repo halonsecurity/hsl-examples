@@ -1,4 +1,3 @@
--*- mode: java;-*-
 include_once "file:urlencode";
 
 $rewriteurl = "https://urlrewrite.example.com/";
