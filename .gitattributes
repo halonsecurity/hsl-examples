@@ -1,3 +1,2 @@
-*.hsl linguist-language=javascript
-rewrite/urlrewrite/*.hsl linguist-language=php
+*.hsl linguist-language=java
 generate.py linguist-generated=true
