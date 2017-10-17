@@ -1,2 +1,2 @@
-*.hsl linguist-language=java
 generate.py linguist-generated=true
+*.hsl linguist-language=java
