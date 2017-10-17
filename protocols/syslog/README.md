@@ -13,7 +13,7 @@ The following options are available in the **opts** array.
 - port `number` - UDP port. The default is 514.
 - facility `string` - Log facility (see source code). The default is "LOG_MAIL".
 - hostname `string` - Hostname. The default is the system hostname.
-- application `string` - The application name. The default is "smtpd".
+- application `string` - The application name. The default is "halon".
 
 ## logger($priority, $message)
 Send a syslog message
