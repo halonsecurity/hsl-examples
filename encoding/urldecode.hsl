@@ -1,0 +1,25 @@
+// urldecoding according to rfc3986
+
+function urldecode($string)
+{
+	$result = "";
+	$i = 0;
+	$len = strlen($string);
+	while ($i < $len)
+	{
+		$c = $string[$i];
+		if ($c == "%")
+		{
+			$h = $string[($i + 1):($i + 3)];
+			if ($h =~ ''/^[0-9a-f]{2}$/i'')
+			{
+				$result .= pack("H2", strtolower($h));
+				$i += 3;
+				continue;
+			}
+		}
+		$result .= $c;
+		$i += 1;
+	}
+	return $result;
+}
