@@ -24,7 +24,7 @@ The following options are available in the **tls** and **controllertls** array.
 - enabled `boolean` - 
 - opts `array` - All available options can be found on [here](http://docs.halon.se/hsl/functions.html?highlight=tlssocket#TLSSocket)
 
-##scan(fp)
+## scan(fp)
 Check if a message is spam or not. 
 
 **Params**
@@ -35,7 +35,7 @@ Check if a message is spam or not.
 
 **Return type**: `array`, `none` on error
 
-##learn(fp, type)
+## learn(fp, type)
 Send a message to the controller for learning.
 
 **Params**
