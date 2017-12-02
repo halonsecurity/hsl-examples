@@ -21,7 +21,7 @@ The following options are available in the **opts** array.
 
 The following options are available in the **tls** and **controllertls** array.
 
-- enabled `boolean` - 
+- enabled `boolean` - Enable TLS for the specific socket
 - opts `array` - All available options can be found on [here](http://docs.halon.se/hsl/functions.html?highlight=tlssocket#TLSSocket)
 
 ## scan(fp)
