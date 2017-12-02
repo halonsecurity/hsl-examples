@@ -1,0 +1,114 @@
+class rspamd
+{
+	private $opts = [];
+
+	constructor($opts)
+	{
+		$this->opts["host"] = $opts["host"] ?? "";
+		$this->opts["port"] = number($opts["port"] ?? 11333);
+		$this->opts["tls"] = $opts["tls"] ?? [];
+
+		$this->opts["controllerhost"] = $opts["controllerhost"] ?? "";
+		$this->opts["controllerport"] = number($opts["controllerport"] ?? 11334);
+		$this->opts["controllertls"] = $opts["controllertls"] ?? [];
+
+		$this->opts["password"] = $opts["password"] ?? "";
+		$this->opts["timeout"] = number($opts["timeout"] ?? 5);
+		$this->opts["max_message_size"] = number($opts["max_message_size"] ?? (5 * 1024 * 1024));
+	}
+
+	private function post($host, $port, $uri, $fp, $headers = [], $tls = [])
+	{
+		$maxMessageSize = $this->opts["max_message_size"];
+
+
+		$socket = Socket(Socket::AF($host), "SOCK_STREAM");
+		if (!$socket->settimeout($this->opts["timeout"])) return;
+		if (!$socket->connect($host, $port)) return;
+
+		if (isset($tls["enabled"]) and $tls["enabled"] == true) {
+			$socket = TLSSocket($socket, $tls["opts"] ?? []);
+			if (!$socket->handshake()) return;
+		}
+
+		$length = $fp->seek(0, "SEEK_END");
+		if ($length > $maxMessageSize)
+			$length = $maxMessageSize;
+		$fp->seek(0, "SEEK_SET");
+
+		$httpheaders = implode("\r\n", [
+							"POST $uri HTTP/1.0",
+							"Host: $host:$port",
+							"User-Agent: Halon HTTP client (HSL)",
+							"Content-Type: application/json",
+							"Accept: application/json",
+							"Content-Length: $length"
+		])."\r\n";
+
+		$rspamheaders = [];
+		foreach ($headers as $k => $i) {
+			$rspamheaders[] = "$k: $i";
+		}
+		$httpheaders .= implode("\r\n", $rspamheaders)."\r\n\r\n";
+
+		if (!$socket->send($httpheaders)) return;
+
+		$b = 0;
+		while ($str = $fp->read(($maxMessageSize - $b < 8192) ? ($maxMessageSize - $b) : 8192)) {
+			if (!$socket->send($str)) return;
+			$b += strlen($str);
+			if ($b >= $maxMessageSize)
+				break;
+		}
+
+		$response = "";
+		while ($resp = $socket->recv(8192))
+			$response .= $resp;
+
+		[$headers, $content] = explode("\r\n\r\n", $response);
+		[$http, $status, $msg] = explode(" ", explode("\r\n", $headers)[0]);
+
+		return ["status" => number($status), "content" => $content];
+	}
+
+	function scan($fp)
+	{
+		global $senderip;
+		global $sender;
+		global $messageid;
+		global $senderhelo;
+		global $recipient;
+
+		if (!$this->opts["host"]) return;
+
+		$headers = ["Ip" => $senderip, "From" => $sender, "Queue-Id" => $messageid, "Helo" => $senderhelo, "User" => $recipient, "Subject" => GetHeader("Subject")];
+
+		$result = $this->post($this->opts["host"] , $this->opts["port"], "/check", $fp, $headers, $this->opts["tls"]);
+		$content = json_decode($result["content"]);
+
+		if (!is_array($content)) return;
+
+		return $content["default"];
+	}
+
+	function learn($fp, $type)
+	{
+		if (!$this->opts["controllerhost"]) return;
+
+		if ($type == "ham")
+			$uri = "/learnham";
+		else if ($type == "spam")
+			$uri = "/learnspam";
+		else
+			return;
+
+		$headers = ["Password" => $this->opts["password"]];
+
+		$result = $this->post($this->opts["controllerhost"], $this->opts["controllerport"], $uri, $fp, $headers, $this->opts["controllertls"]);
+		$content = json_decode($result["content"]);
+
+		if (!is_array($content)) return;
+
+		return $content;
+	}
+}
