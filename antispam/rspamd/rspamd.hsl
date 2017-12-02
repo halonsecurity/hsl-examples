@@ -81,7 +81,14 @@ class rspamd
 
 		if (!$this->opts["host"]) return;
 
-		$headers = ["Ip" => $senderip, "From" => $sender, "Queue-Id" => $messageid, "Helo" => $senderhelo, "User" => $recipient, "Subject" => GetHeader("Subject")];
+		$headers = [
+				"Ip" => $senderip,
+				"From" => $sender,
+				"Queue-Id" => $messageid,
+				"Helo" => $senderhelo,
+				"User" => $recipient,
+				"Subject" => GetHeader("Subject")
+		];
 
 		$result = $this->post($this->opts["host"] , $this->opts["port"], "/check", $fp, $headers, $this->opts["tls"]);
 		$content = json_decode($result["content"]);
