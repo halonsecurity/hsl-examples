@@ -21,7 +21,6 @@ class rspamd
 	{
 		$maxMessageSize = $this->opts["max_message_size"];
 
-
 		$socket = Socket(Socket::AF($host), "SOCK_STREAM");
 		if (!$socket->settimeout($this->opts["timeout"])) return;
 		if (!$socket->connect($host, $port)) return;
@@ -37,12 +36,12 @@ class rspamd
 		$fp->seek(0, "SEEK_SET");
 
 		$httpheaders = implode("\r\n", [
-							"POST $uri HTTP/1.0",
-							"Host: $host:$port",
-							"User-Agent: Halon HTTP client (HSL)",
-							"Content-Type: application/json",
-							"Accept: application/json",
-							"Content-Length: $length"
+						"POST $uri HTTP/1.0",
+						"Host: $host:$port",
+						"User-Agent: Halon HTTP client (HSL)",
+						"Content-Type: application/json",
+						"Accept: application/json",
+						"Content-Length: $length"
 		])."\r\n";
 
 		$rspamheaders = [];
