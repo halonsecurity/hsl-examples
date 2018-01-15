@@ -1,12 +1,3 @@
-function ip2long($ip)
-{
-	$ip = explode(".", $ip);
-	return (number($ip[0]) * 256 ** 3) +
-		(number($ip[1]) * 256 ** 2) +
-		(number($ip[2]) * 256 ** 1) +
-		(number($ip[3]) * 256 ** 0);
-}
-
 function geoip_object()
 {
 	$object = file("file://GeoIPCountryWhois.csv");
@@ -20,7 +11,11 @@ function geoip_object()
 
 function geoip($senderip)
 {
-	$ip = ip2long($senderip);
+	$ip = unpack("N*", inet_pton($senderip));
+	if (count($ip) != 1)
+		return;
+	$ip = $ip[0];
+
 	$lst = cache [] geoip_object();
 	$min = 0;
 	$max = count($lst);
