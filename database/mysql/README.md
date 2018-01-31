@@ -27,7 +27,7 @@ Disconnects the current connection.
 **Returns**: None.
 
 ## query(query, params)
-Pass a "prepared" statement to the MySQL server.
+Pass a "prepared" statement to the MySQL server. Parameters are replaced by '?' in order they appear in the array.
 
 **Params**
 
