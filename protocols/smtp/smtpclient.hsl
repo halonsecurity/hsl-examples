@@ -29,6 +29,14 @@ class SMTPClient
 	{
 		return $this->command("EHLO $hostname", 250);
 	}
+	
+	function STARTTLS()
+	{
+		if (!$this->command("STARTTLS", 220)) return false;
+		$this->socket = TLSSocket($this->socket);
+		if (!$this->socket->handshake()) return false;
+		return true;
+	}
 
 	function XCLIENT($name, $value)
 	{
