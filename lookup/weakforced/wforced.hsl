@@ -1,0 +1,109 @@
+class Wforced
+{
+	private $opts = [];
+
+	constructor($opts)
+	{
+		$this->opts["url"] = $opts["url"] ?? "";
+		$this->opts["port"] = number($opts["port"] ?? 8084);
+		$this->opts["opts"] = $opts["opts"] ?? [];
+
+		$this->opts["timeout"] = number($opts["timeout"] ?? 5);
+
+		$this->opts["username"] = $opts["username"] ?? "";
+		$this->opts["password"] = $opts["password"] ?? "";
+	}
+
+	private function post($uri, $post = none)
+	{
+		$url = $this->opts["url"].":".$this->opts["port"];
+		$basicauth = base64_encode($this->opts["username"].":".$this->opts["password"]);
+		$headers = [
+			"Content-Type: application/json",
+			"Authorization: Basic $basicauth"
+		];
+		if ($post)
+			$response = http($url.$uri, ["extended_result" => true, "headers" => $headers, "timeout" => $this->opts["timeout"]] + $this->opts["opts"], [], $post);
+		else
+			$response = http($url.$uri, ["extended_result" => true, "headers" => $headers, "timeout" => $this->opts["timeout"] + $this->opts["opts"]]);
+		return $response["content"];
+	}
+
+	function allow($args)
+	{
+		$a["login"] = $args->login;
+		$a["pwhash"] = $args->pwhash;
+		$a["remote"] = $args->remote;
+		$a += $args->opts;
+
+		$result = $this->post("/?command=allow", json_encode($a));
+		$result = json_decode($result ?? "");
+
+		if (isset($result["status"]))
+			return $result["status"];
+
+		return -1;
+	}
+
+	function report($args, $authsuccess)
+	{
+		$a["login"] = $args->login;
+		$a["pwhash"] = $args->pwhash;
+		$a["remote"] = $args->remote;
+		$a["success"] = $authsuccess;
+		$a += $args->opts;
+
+		$result = $this->post("/?command=report", json_encode($a));
+		$result = json_decode($result ?? "");
+
+		if (isset($result["status"]) and $result["status"] == "ok")
+			return true;
+
+		return false;
+	}
+
+	function ping()
+	{
+		$pong = $this->post("/?command=ping");
+		$result = json_decode($pong ?? "");
+		if (isset($result["status"]) and $result["status"] == "ok")
+			return true;
+
+		return false;
+	}
+
+	function cmd($command, $args = none)
+	{
+		if ($args)
+			$result = $this->post("/?command=$command", json_encode($args));
+		else
+			$result = $this->post("/?command=$command");
+		return json_decode($result ?? "");
+	}
+}
+
+class WforcedUser
+{
+	$secret = "badsecret";
+
+	$login = "";
+	$pwhash = "";
+	$remote = "";
+	$opts = [];
+
+	constructor($username, $password, $ip, $opts = [], $hashlen = -1)
+	{
+		$this->login = $username;
+		$this->pwhash = $this->hashpwd($username, $password, $hashlen);
+		$this->remote = $ip;
+		$this->opts = $opts;
+	}
+
+	function hashpwd($username, $password, $hashlen = -1)
+	{
+		$hash = sha1($this->secret.$username."\x00".$password);
+		if (number($hashlen) > 0)
+			echo $hash = $hash[0:number($hashlen)];
+		return $hash;
+	}
+}
