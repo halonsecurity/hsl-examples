@@ -14,7 +14,7 @@ class Wforced
 		$this->opts["password"] = $opts["password"] ?? "";
 	}
 
-	private function post($uri, $post = none)
+	private function api($uri, $post = none)
 	{
 		$url = $this->opts["url"].":".$this->opts["port"];
 		$basicauth = base64_encode($this->opts["username"].":".$this->opts["password"]);
@@ -29,14 +29,14 @@ class Wforced
 		return $response["content"];
 	}
 
-	function allow($args)
+	function allow($wfuser)
 	{
-		$a["login"] = $args->login;
-		$a["pwhash"] = $args->pwhash;
-		$a["remote"] = $args->remote;
-		$a += $args->opts;
+		$a["login"] = $wfuser->login;
+		$a["pwhash"] = $wfuser->pwhash;
+		$a["remote"] = $wfuser->remote;
+		$a += $wfuser->attrs;
 
-		$result = $this->post("/?command=allow", json_encode($a));
+		$result = $this->api("/?command=allow", json_encode($a));
 		$result = json_decode($result ?? "");
 
 		if (isset($result["status"]))
@@ -45,15 +45,15 @@ class Wforced
 		return -1;
 	}
 
-	function report($args, $authsuccess)
+	function report($wfuser, $authsuccess)
 	{
-		$a["login"] = $args->login;
-		$a["pwhash"] = $args->pwhash;
-		$a["remote"] = $args->remote;
+		$a["login"] = $wfuser->login;
+		$a["pwhash"] = $wfuser->pwhash;
+		$a["remote"] = $wfuser->remote;
 		$a["success"] = $authsuccess;
-		$a += $args->opts;
+		$a += $wfuser->attrs;
 
-		$result = $this->post("/?command=report", json_encode($a));
+		$result = $this->api("/?command=report", json_encode($a));
 		$result = json_decode($result ?? "");
 
 		if (isset($result["status"]) and $result["status"] == "ok")
@@ -64,7 +64,7 @@ class Wforced
 
 	function ping()
 	{
-		$pong = $this->post("/?command=ping");
+		$pong = $this->api("/?command=ping");
 		$result = json_decode($pong ?? "");
 		if (isset($result["status"]) and $result["status"] == "ok")
 			return true;
@@ -75,9 +75,9 @@ class Wforced
 	function cmd($command, $args = none)
 	{
 		if ($args)
-			$result = $this->post("/?command=$command", json_encode($args));
+			$result = $this->api("/?command=$command", json_encode($args));
 		else
-			$result = $this->post("/?command=$command");
+			$result = $this->api("/?command=$command");
 		return json_decode($result ?? "");
 	}
 }
@@ -89,14 +89,14 @@ class WforcedUser
 	$login = "";
 	$pwhash = "";
 	$remote = "";
-	$opts = [];
+	$attrs = [];
 
-	constructor($username, $password, $ip, $opts = [], $hashlen = -1)
+	constructor($username, $password, $ip, $attrs = [], $hashlen = -1)
 	{
 		$this->login = $username;
 		$this->pwhash = $this->hashpwd($username, $password, $hashlen);
 		$this->remote = $ip;
-		$this->opts = $opts;
+		$this->attrs = $attrs;
 	}
 
 	function hashpwd($username, $password, $hashlen = -1)
