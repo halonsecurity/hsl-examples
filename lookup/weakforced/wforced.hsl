@@ -85,25 +85,56 @@ class Wforced
 class WforcedUser
 {
 	$secret = "badsecret";
+	$hashmech = "sha256";
 
 	$login = "";
 	$pwhash = "";
 	$remote = "";
 	$attrs = [];
 
-	constructor($username, $password, $ip, $attrs = [], $hashlen = -1)
+	constructor($username, $password, $ip, $attrs = [], $trunclen = -1)
 	{
 		$this->login = $username;
-		$this->pwhash = $this->hashpwd($username, $password, $hashlen);
+		$this->pwhash = $this->hashpwd($username, $password, $trunclen);
 		$this->remote = $ip;
 		$this->attrs = $attrs;
 	}
 
-	function hashpwd($username, $password, $hashlen = -1)
+	function hashpwd($username, $password, $trunclen = -1)
 	{
-		$hash = sha1($this->secret.$username."\x00".$password);
-		if (number($hashlen) > 0)
-			echo $hash = $hash[0:number($hashlen)];
+		switch ($this->hashmech) {
+			case "sha1":
+				$hash = sha1($this->secret.$username."\x00".$password);
+				break;
+			case "sha256":
+				$hash = sha2($this->secret.$username."\x00".$password, 256);
+				break;
+			case "sha512":
+				$hash = sha2($this->secret.$username."\x00".$password, 512);
+				break;
+			case "md5":
+				$hash = md5($this->secret.$username."\x00".$password);
+				break;
+			default:
+				return none;
+		}
+		if ($trunclen > 0)
+			$hash = $this->truncate($hash, $trunclen);
 		return $hash;
+	}
+
+	private function truncate($hash, $bits)
+	{
+		$hash = pack("H*", $hash);
+		$bytes = round($bits / 8);
+		$bits = $bits % 8;
+		$chr = unpack("C*", $hash[0:$bytes]);
+		if ($bits > 0) {
+			for ($i = $bytes - 1; $i > 0; $i--) {
+				$chr[$i] = ($chr[$i] >> (8 - $bits)) + (($chr[$i - 1] & (0xff >> ($bits))) << $bits);
+			}
+			$chr[0] = $chr[0] >> (8 - $bits);
+		}
+		return unpack("H*", pack("C*", ...$chr))[0];
 	}
 }
