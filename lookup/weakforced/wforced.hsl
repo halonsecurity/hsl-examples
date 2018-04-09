@@ -102,18 +102,19 @@ class WforcedUser
 
 	function hashpwd($username, $password, $trunclen = -1)
 	{
+		$pw = $this->secret.$username."\x00".$password;
 		switch ($this->hashmech) {
 			case "sha1":
-				$hash = sha1($this->secret.$username."\x00".$password);
+				$hash = sha1($pw);
 				break;
 			case "sha256":
-				$hash = sha2($this->secret.$username."\x00".$password, 256);
+				$hash = sha2($pw, 256);
 				break;
 			case "sha512":
-				$hash = sha2($this->secret.$username."\x00".$password, 512);
+				$hash = sha2($pw, 512);
 				break;
 			case "md5":
-				$hash = md5($this->secret.$username."\x00".$password);
+				$hash = md5($pw);
 				break;
 			default:
 				return none;
