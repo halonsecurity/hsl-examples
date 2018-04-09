@@ -21,7 +21,7 @@ Query the weakforced service if the login should be allowed or not.
 
 **Params**
 
-- args `object` - WforcedUser object. 
+- wfuser `object` - WforcedUser object. 
 
 **Returns**: `number`, `0` if allowed, `-1` if denied or a positive number for sleep / defer. `-1` if an error occurred.
 
@@ -30,7 +30,7 @@ Report the authentication result to the weakforced service.
 
 **Params**
 
-- args `object` - WforcedUser object.
+- wfuser `object` - WforcedUser object.
 - authsuccess `boolean` - Result from the authentication attempt. 
 
 **Returns**: `boolean`
@@ -57,8 +57,8 @@ Send any kind of available command to the weakforced service.
 - username `string` - A username or any type of identifier.
 - password `string` - The password that was used, will be hashed by the hashpwd function.
 - ip `string` - The IP address for the session.
-- opts `array` - Optional array that will be passed on to the weakforced service.
-- hashlen `number` - Truncate the hashed password, by default it will use full length.
+- attrs `array` - Optional array that will be passed on to the weakforced service.
+- trunclen `number` - Truncate the hashed password by bits, by default it will use full length.
 
 **Returns**: class object.
 
@@ -67,6 +67,6 @@ Send any kind of available command to the weakforced service.
 **Params**
 - username `string` - A username or any type of identifier.
 - password `string` - The password that was used.
-- hashlen `number` - Truncate the hashed password, by default it will use full length.
+- trunclen `number` - Truncate the hashed password by bits, by default it will use full length.
 
 **Returns**: `string`
