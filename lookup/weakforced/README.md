@@ -50,7 +50,7 @@ Send any kind of available command to the weakforced service.
 
 **Returns**: `array`
 
-## WforcedUser (username, password, ip, [opts [, hashlen]])
+## WforcedUser (username, password, ip, [attrs [, trunclen]])
 
 **Params**
 
@@ -62,7 +62,7 @@ Send any kind of available command to the weakforced service.
 
 **Returns**: class object.
 
-## hashpwd(username, password [, hashlen])
+## hashpwd(username, password [, trunclen])
 
 **Params**
 - username `string` - A username or any type of identifier.
