@@ -50,7 +50,7 @@ Send any kind of available command to the weakforced service.
 
 **Returns**: `array`
 
-## WforcedUser (username, password, ip, [attrs [, trunclen]])
+## WforcedUser (username, password, ip [, attrs [, trunclen]])
 
 **Params**
 
