@@ -24,3 +24,5 @@ if ($username == "totpuser" and
   Authenticate();
 }
 ```
+
+Note: the base32_decode function is available as encoding/base32_decode.hsl
