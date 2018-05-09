@@ -62,7 +62,7 @@ class AuthenticationResults
         return $this;
     }
 
-    function addMethod($name, $result, $ptypes)
+    function addMethod($name, $result, $ptypes = [])
     {
         $this->authresult[$name] = ["result" => $result, "ptype" => $ptypes];
         return $this;
