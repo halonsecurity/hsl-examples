@@ -1,0 +1,93 @@
+class AuthenticationResult
+{
+    private $authresult = [];
+
+    function SPF($ptypes = none)
+    {
+        global $senderip, $senderhelo, $senderdomain;
+
+        $this->authresult["spf"]["result"] = spf($senderip, $senderhelo,  $senderdomain, ["extended_result" => true])["result"];
+        $this->authresult["spf"]["ptype"] = $senderdomain ? ["smtp.mailfrom" => $senderdomain] : ["smtp.helo" => $senderhelo];
+
+        if (is_array($ptypes)) $this->authresult["spf"]["ptype"] += $ptypes;
+        return $this;
+    }
+
+    function DKIM($ptypes = none)
+    {
+        foreach (MIME("0")->getHeaders("DKIM-Signature", ["field" => true]) as $dkimsign)
+        {
+            $dkimresult = DKIMVerify($dkimsign);
+            $this->authresult["dkim"] = ["result" => $dkimresult["result"], "ptype" => []];
+            if (isset($dkimresult["tags"]["d"]))
+                $this->authresult["dkim"]["ptype"] += ["header.d" => $dkimresult["tags"]["d"]];
+            if (isset($dkimresult["tags"]["s"]))
+                $this->authresult["dkim"]["ptype"] += ["header.s" => $dkimresult["tags"]["s"]];
+            if (isset($dkimresult["tags"]["b"]))
+                $this->authresult["dkim"]["ptype"] += ["header.b" => pcre_replace(''/[\s\r\n]/'', "", $dkimresult["tags"]["b"])[:8]];
+        }
+
+        if (is_array($ptypes)) $this->authresult["dkim"]["ptype"] += $ptypes;
+        return $this;
+    }
+
+    function DMARC($ptypes = none)
+    {
+        $dmarcresult = ScanDMARC();
+
+        if ($dmarcresult == "permerror") {
+            $this->authresult["dmarc"]["result"] = $dmarcresult;
+        } else {
+            foreach ($dmarcresult as $d => $p)
+            {
+                switch ($p)
+                {
+                    case "none":
+                    case "reject":
+                    case "quarantine":
+                        $p = "fail";
+                        break;
+                    case "policy_absent":
+                        $p = "none";
+                        break;
+                }
+                $this->authresult["dmarc"]["result"] = $p;
+                $this->authresult["dmarc"]["ptype"] = ["header.from" => $d];
+            }        
+        }
+
+        if (is_array($ptypes)) $this->authresult["dmarc"]["ptype"] += $ptypes;
+        return $this;
+    }
+
+    function addMethod($name, $result, $ptypes)
+    {
+        $this->authresult[$name] = ["result" => $result, "ptype" => $ptypes];
+        return $this;
+    }
+
+    function toString()
+    {
+        $result = gethostname().";";
+
+        if (count($this->authresult))
+        {    
+            foreach ($this->authresult as $method => $i)
+            {
+                $result .= "\r\n\t$method=".$i["result"];
+                if (is_array($i["ptype"]))
+                {
+                    foreach ($i["ptype"] as $ptype => $value)
+                    {
+                        $result .= " $ptype=$value";
+                    }
+                }
+                $result .= ";";
+            }
+        } else {
+            $result .= " none";
+        }
+
+        return $result;
+    }
+}
