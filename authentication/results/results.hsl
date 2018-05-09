@@ -15,8 +15,10 @@ class AuthenticationResult
 
     function DKIM($ptypes = none)
     {
-        foreach (MIME("0")->getHeaders("DKIM-Signature", ["field" => true]) as $dkimsign)
+        foreach (MIME("0")->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
         {
+            if ($i >= 5) break;
+
             $dkimresult = DKIMVerify($dkimsign);
             $this->authresult["dkim"] = ["result" => $dkimresult["result"], "ptype" => []];
             if (isset($dkimresult["tags"]["d"]))
