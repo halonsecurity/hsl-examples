@@ -1,4 +1,4 @@
-class AuthenticationResult
+class AuthenticationResults
 {
     private $authresult = [];
 
