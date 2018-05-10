@@ -25,6 +25,8 @@ class AuthenticationResults
                 $this->authresult["dkim"]["ptype"] += ["header.d" => $dkimresult["tags"]["d"]];
             if (isset($dkimresult["tags"]["s"]))
                 $this->authresult["dkim"]["ptype"] += ["header.s" => $dkimresult["tags"]["s"]];
+            if (isset($dkimresult["tags"]["a"]))
+                $this->authresult["dkim"]["ptype"] += ["header.a" => $dkimresult["tags"]["a"]];
             if (isset($dkimresult["tags"]["b"]))
                 $this->authresult["dkim"]["ptype"] += ["header.b" => pcre_replace(''/[\s\r\n]/'', "", $dkimresult["tags"]["b"])[:8]];
         }
