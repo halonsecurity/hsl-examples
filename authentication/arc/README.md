@@ -1,8 +1,6 @@
 ## Authenticated Received Chain (ARC) 
 An ARC implementation based on [draft-ietf-dmarc-arc-protocol-14](https://tools.ietf.org/html/draft-ietf-dmarc-arc-protocol-14).
 
-Example usage
-
 ```java
 include "authentication.header";
 include "authentication.arc";
