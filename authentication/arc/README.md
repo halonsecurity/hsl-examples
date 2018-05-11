@@ -1,5 +1,5 @@
 ## Authenticated Received Chain (ARC) 
-A ARC implementation based on [draft-ietf-dmarc-arc-protocol-14](https://tools.ietf.org/html/draft-ietf-dmarc-arc-protocol-14).
+An ARC implementation based on [draft-ietf-dmarc-arc-protocol-14](https://tools.ietf.org/html/draft-ietf-dmarc-arc-protocol-14).
 
 Example usage
 
