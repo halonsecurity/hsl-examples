@@ -1,0 +1,226 @@
+class ARC
+{
+	static function chainValidate()
+	{
+		$arcset = [];
+		foreach (MIME("0")->getHeaders("ARC-Seal") as $x => $header)
+		{
+			$tl = dkim_taglist($header);
+			if (!$tl) return [
+				"status" => "fail",
+				"error" => "Could not parse ARC-Seal header ($x)"
+			];
+			$i = $tl["i"];
+			if (isset($arcset[$i]["seal"])) return [
+				"status" => "fail",
+				"error" => "Duplicate ARC-Seal header (i=$i)"
+			];
+			$arcset[$i]["seal"] = [
+					"tl" => $tl,
+					"h" => $header,
+			];
+			if (count($arcset) > 50) return [
+				"status" => "fail",
+				"error" => "Too many ARC-Seal headers",
+			];
+		}
+
+		if (count($arcset) == 0) return ["status" => "none"];
+
+		foreach (MIME("0")->getHeaders("ARC-Message-Signature", ["field" => true]) as $x => $header)
+		{
+			$tl = dkim_taglist(pcre_replace(''/[\r\n]/'', "", explode(":", $header, 2)[1]));
+			if (!$tl) return [
+				"status" => "fail",
+				"error" => "Could not parse ARC-Message-Signature header ($x)"
+			];
+			$i = $tl["i"];
+			if (isset($arcset[$i]["ams"])) return [
+				"status" => "fail",
+				"error" => "Duplicate ARC-Message-Signature header (i=$i)"
+			];
+			$arcset[$i]["ams"] = [
+					"tl" => $tl,
+					"h" => $header,
+			];
+			if (count($arcset) > 50) return [
+				"status" => "fail",
+				"error" => "Too many ARC-Message-Signature headers",
+			];
+		}
+
+		foreach (MIME("0")->getHeaders("ARC-Authentication-Results") as $x => $header)
+		{
+			$h = pcre_match(''/^i\s*=\s*([0-9]{1,2})\s*;\s*(.*?)$/'', $header);
+			$i = $h[1];
+			if (!$i) return [
+				"status" => "fail",
+				"error" => "Could not parse ARC-Authentication-Results header ($x)"
+			];
+			if (isset($arcset[$i]["aar"])) return [
+				"status" => "fail",
+				"error" => "Duplicate ARC-Authentication-Results header (i=$i)"
+			];
+			$arcset[$i]["aar"] = [
+					"h" => $header,
+					"ar" => $h[2],
+			];
+			if (count($arcset) > 50) return [
+				"status" => "fail",
+				"error" => "Too many ARC-Authentication-Results headers",
+			];
+		}
+
+		for ($i = 1; $i <= count($arcset); ++$i)
+		{
+			// 4.2.2
+			if (!isset($arcset[$i])) return [
+				"status" => "fail",
+				"error" => "ARC set (i=$i) is missing",
+			];
+			// 4.2.1
+			if (count($arcset[$i]) != 3) return [
+				"status" => "fail",
+				"error" => "ARC set (i=$i) is missing a header",
+			];
+			// 4.2.3
+			if ($i == 1) if ($arcset[$i]["seal"]["tl"]["cv"] != "none") return [
+				"status" => "fail",
+				"error" => "ARC-Seal (i=$i) is not cv=none"
+			];
+			if ($i >= 2) if ($arcset[$i]["seal"]["tl"]["cv"] != "pass") return [
+				"status" => "fail",
+				"error" => "ARC-Seal (i=$i) has failed cv!=pass"
+			];
+		}
+
+		$highest = count($arcset);
+
+		$dkim = DKIMVerify($arcset[$highest]["ams"]["h"]);
+		if ($dkim["result"] != "pass") return [
+			"status" => "fail",
+			"error" => "ARC-Message-Signature (i=$highest) could not be verified: " . $dkim["error"]
+		];
+
+		$oldestpass = count($arcset) - 1;
+		for (; $oldestpass > 0; --$oldestpass)
+		{
+			$dkim = DKIMVerify($arcset[$oldestpass]["ams"]["h"]);
+			if ($dkim["result"] != "pass") 
+			{
+				$oldestpass += 1;
+				break;
+			}
+		}
+
+		for ($i = count($arcset); $i >= 1; --$i)
+		{
+			$data = "";
+			for ($x = 1; $x <= $i; ++$x)
+			{
+				$data .= dkim_header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
+				$data .= dkim_header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n";
+				$seal = $arcset[$x]["seal"]["h"];
+				if ($x == $i)
+					$seal = str_replace($arcset[$x]["seal"]["tl"]["b"], "", $seal);
+				$seal = dkim_header_canonicalization("ARC-Seal:".$seal);
+
+				$data .= $seal;
+				if ($x != $i)
+					$data .= "\r\n";
+			}
+
+			$sig = base64_decode(pcre_replace(''/[\s]/'', "", $arcset[$i]["seal"]["tl"]["b"]));
+			$dns = $arcset[$i]["seal"]["tl"]["s"] . "._domainkey." . $arcset[$i]["seal"]["tl"]["d"];
+			$txt = dnstxt($dns, ["extended_result" => true]);
+			if (isset($txt["error"])) return [
+				"status" => "fail",
+				"error" => "ARC-Seal (i=$i) could not be verified. DNS error for $dns: " . $txt["error"]
+			];
+
+			$pub = base64_decode(dkim_taglist($txt["result"][0])["p"]);
+
+			$rsa = rsa_verify($data, $sig, $pub,
+				[
+					"hash" => $arcset[$i]["seal"]["tl"]["a"] == "rsa-sha256" ? "sha256" : "sha1",
+					"format" => "SubjectPublicKeyInfo",
+				]
+			);
+
+			if ($rsa != 1) return [
+				"status" => "fail",
+				"error" => "ARC-Seal (i=$i) could not be verified"
+			];
+		}
+
+		return [
+				"status" => "pass",
+				"oldestpass" => $oldestpass,
+				"instance" => count($arcset),
+				"domains" => array_map(function ($set) { return $set["seal"]["tl"]["d"]; }, $arcset),
+				"ar1" => $arcset[1]["aar"]["ar"],
+				"arcset" => $arcset,
+			];
+	}
+
+	static function seal($selector, $domain, $privatekey, $chain, $ar)
+	{
+		$i = $chain["status"] != "none" ? $chain["instance"] + 1 : 1;
+
+		$ams = DKIMSign(
+				$selector, $domain, $privatekey,
+				[
+					"arc" => $i,
+					"return_header" => true,
+					"additional_headers" => ["DKIM-Signature"],
+				]);
+		if (!$ams) return false;
+
+		$headers = [];
+		$headers[] = ["ARC-Authentication-Results", "i=$i; $ar"];
+		$headers[] = ["ARC-Message-Signature", $ams];
+
+		$cv = $chain["status"] ?? "none";
+		$t = round(time(), 0);
+		$headers[] = ["ARC-Seal", "i=$i; a=rsa-sha256; t=$t; cv=$cv;\r\n\td=$domain; s=$selector;\r\n\tb="];
+
+		$data = "";
+		for ($x = 1; $x <= count($chain["arcset"]); ++$x)
+		{
+			$arcset = $chain["arcset"];
+			$data .= dkim_header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
+			$data .= dkim_header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n"; /* fetched as field */
+			$data .= dkim_header_canonicalization("ARC-Seal:".$arcset[$x]["seal"]["h"])."\r\n";
+		}
+
+		foreach($headers as $h)
+		{
+			$data .= dkim_header_canonicalization($h[0].":".$h[1]);
+			if ($h[0] != "ARC-Seal")
+				$data .= "\r\n";
+		}
+
+		$sig = rsa_sign($data, $privatekey, ["id" => true, "hash" => "sha256"]);
+		$headers[2][1] .= static::split_header_b(base64_encode($sig));
+
+		MIME("0")->addHeader($headers[0][0], $headers[0][1], ["encode" => false]);
+		MIME("0")->addHeader($headers[1][0], $headers[1][1], ["encode" => false]);
+		MIME("0")->addHeader($headers[2][0], $headers[2][1], ["encode" => false]);
+		return true;
+	}
+
+	static function split_header_b($key)
+	{
+		$l = strlen($key);
+		$result = "";
+		$p = 77;
+		for ($i = 0; $i < $l; $i += $p)
+		{
+			if ($i > 0) $p = 78;
+			$result .= $key[$i:$i + $p];
+			if ($i + $p < strlen($key))
+				$result .= "\r\n\t ";
+		}
+		return $result;
+	}
+}
