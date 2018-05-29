@@ -118,12 +118,12 @@ class ARC
 			$data = "";
 			for ($x = 1; $x <= $i; ++$x)
 			{
-				$data .= dkim_header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
-				$data .= dkim_header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n";
+				$data .= static::header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
+				$data .= static::header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n";
 				$seal = $arcset[$x]["seal"]["h"];
 				if ($x == $i)
 					$seal = str_replace($arcset[$x]["seal"]["tl"]["b"], "", $seal);
-				$seal = dkim_header_canonicalization("ARC-Seal:".$seal);
+				$seal = static::header_canonicalization("ARC-Seal:".$seal);
 
 				$data .= $seal;
 				if ($x != $i)
@@ -188,14 +188,14 @@ class ARC
 		for ($x = 1; $x <= count($chain["arcset"]); ++$x)
 		{
 			$arcset = $chain["arcset"];
-			$data .= dkim_header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
-			$data .= dkim_header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n"; /* fetched as field */
-			$data .= dkim_header_canonicalization("ARC-Seal:".$arcset[$x]["seal"]["h"])."\r\n";
+			$data .= static::header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
+			$data .= static::header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n"; /* fetched as field */
+			$data .= static::header_canonicalization("ARC-Seal:".$arcset[$x]["seal"]["h"])."\r\n";
 		}
 
 		foreach($headers as $h)
 		{
-			$data .= dkim_header_canonicalization($h[0].":".$h[1]);
+			$data .= static::header_canonicalization($h[0].":".$h[1]);
 			if ($h[0] != "ARC-Seal")
 				$data .= "\r\n";
 		}
@@ -222,5 +222,15 @@ class ARC
 				$result .= "\r\n\t ";
 		}
 		return $result;
+	}
+	
+	static function header_canonicalization($header)
+	{
+		[$name, $value] = explode(":", $header);
+		$name = strtolower($name);
+		$value = pcre_replace(''/\r\n([ \t])/'', "$1", $value);
+		$value = pcre_replace(''/[ \t]+/'', " ", $value);
+		$value = pcre_replace(''/[ \t]*$/'', "", $value);
+		return trim($name).":".trim($value)."\r\n";
 	}
 }
