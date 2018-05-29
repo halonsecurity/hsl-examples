@@ -226,7 +226,7 @@ class ARC
 	
 	static function header_canonicalization($header)
 	{
-		[$name, $value] = explode(":", $header);
+		[$name, $value] = explode(":", $header, 2);
 		$name = strtolower($name);
 		$value = pcre_replace(''/\r\n([ \t])/'', "$1", $value);
 		$value = pcre_replace(''/[ \t]+/'', " ", $value);
