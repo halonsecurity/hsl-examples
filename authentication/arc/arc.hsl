@@ -5,7 +5,7 @@ class ARC
 		$arcset = [];
 		foreach (MIME("0")->getHeaders("ARC-Seal") as $x => $header)
 		{
-			$tl = dkim_taglist($header);
+			$tl = static::taglist($header);
 			if (!$tl) return [
 				"status" => "fail",
 				"error" => "Could not parse ARC-Seal header ($x)"
@@ -29,7 +29,7 @@ class ARC
 
 		foreach (MIME("0")->getHeaders("ARC-Message-Signature", ["field" => true]) as $x => $header)
 		{
-			$tl = dkim_taglist(pcre_replace(''/[\r\n]/'', "", explode(":", $header, 2)[1]));
+			$tl = static::taglist(pcre_replace(''/[\r\n]/'', "", explode(":", $header, 2)[1]));
 			if (!$tl) return [
 				"status" => "fail",
 				"error" => "Could not parse ARC-Message-Signature header ($x)"
@@ -138,7 +138,7 @@ class ARC
 				"error" => "ARC-Seal (i=$i) could not be verified. DNS error for $dns: " . $txt["error"]
 			];
 
-			$pub = base64_decode(dkim_taglist($txt["result"][0])["p"]);
+			$pub = base64_decode(static::taglist($txt["result"][0])["p"]);
 
 			$rsa = rsa_verify($data, $sig, $pub,
 				[
@@ -232,5 +232,20 @@ class ARC
 		$value = pcre_replace(''/[ \t]+/'', " ", $value);
 		$value = pcre_replace(''/[ \t]*$/'', "", $value);
 		return trim($name).":".trim($value)."\r\n";
+	}
+
+	static function taglist($list)
+	{
+		$result = pcre_match_all(''/[\s]*([a-z0-9_]+)[\s]*=[\s]*([\x21-\x3A\x3C-\x7E\s]*?)[\s]*(;|$)/'', $list);
+		if (implode("", $result[0]) != $list)
+			return none;
+		$tags = [];
+		for ($i = 0; $i < count($result[1]); $i++)
+		{
+			if (isset($tags[$result[1][$i]]))
+				return none;
+			$tags[$result[1][$i]] = $result[2][$i];
+		}
+		return $tags;
 	}
 }
