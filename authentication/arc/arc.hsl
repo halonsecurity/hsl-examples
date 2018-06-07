@@ -118,12 +118,12 @@ class ARC
 			$data = "";
 			for ($x = 1; $x <= $i; ++$x)
 			{
-				$data .= static::header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
-				$data .= static::header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n";
+				$data .= static::header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"]) . "\r\n";
+				$data .= static::header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"])) . "\r\n";
 				$seal = $arcset[$x]["seal"]["h"];
 				if ($x == $i)
 					$seal = str_replace($arcset[$x]["seal"]["tl"]["b"], "", $seal);
-				$seal = static::header_canonicalization("ARC-Seal:".$seal);
+				$seal = static::header_canonicalization("ARC-Seal:" . $seal);
 
 				$data .= $seal;
 				if ($x != $i)
@@ -140,14 +140,17 @@ class ARC
 
 			$pub = base64_decode(static::taglist($txt["result"][0])["p"]);
 
-			$rsa = rsa_verify($data, $sig, $pub,
-				[
-					"hash" => $arcset[$i]["seal"]["tl"]["a"] == "rsa-sha256" ? "sha256" : "sha1",
-					"format" => "SubjectPublicKeyInfo",
-				]
-			);
+			if ($arcset[$i]["seal"]["tl"]["a"] == "ed25519-sha256")
+				$verify = ed25519_verify($data, $sig, $pub);
+			else
+				$verify = rsa_verify($data, $sig, $pub,
+					[
+						"hash" => $arcset[$i]["seal"]["tl"]["a"] == "rsa-sha256" ? "sha256" : "sha1",
+						"format" => "SubjectPublicKeyInfo",
+					]
+				);
 
-			if ($rsa != 1) return [
+			if ($verify != 1) return [
 				"status" => "fail",
 				"error" => "ARC-Seal (i=$i) could not be verified"
 			];
@@ -188,9 +191,9 @@ class ARC
 		for ($x = 1; $x <= count($chain["arcset"]); ++$x)
 		{
 			$arcset = $chain["arcset"];
-			$data .= static::header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"])."\r\n";
-			$data .= static::header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"]))."\r\n"; /* fetched as field */
-			$data .= static::header_canonicalization("ARC-Seal:".$arcset[$x]["seal"]["h"])."\r\n";
+			$data .= static::header_canonicalization("ARC-Authentication-Results:".$arcset[$x]["aar"]["h"]) . "\r\n";
+			$data .= static::header_canonicalization(pcre_replace(''/[\r\n]/'', "", $arcset[$x]["ams"]["h"])) . "\r\n"; /* fetched as field */
+			$data .= static::header_canonicalization("ARC-Seal:".$arcset[$x]["seal"]["h"]) . "\r\n";
 		}
 
 		foreach($headers as $h)
@@ -231,7 +234,7 @@ class ARC
 		$value = pcre_replace(''/\r\n([ \t])/'', "$1", $value);
 		$value = pcre_replace(''/[ \t]+/'', " ", $value);
 		$value = pcre_replace(''/[ \t]*$/'', "", $value);
-		return trim($name).":".trim($value)."\r\n";
+		return trim($name) . ":" . trim($value) . "\r\n";
 	}
 
 	static function taglist($list)
