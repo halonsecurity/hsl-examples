@@ -141,7 +141,7 @@ class ARC
 			$pub = base64_decode(static::taglist($txt["result"][0])["p"]);
 
 			if ($arcset[$i]["seal"]["tl"]["a"] == "ed25519-sha256")
-				$verify = ed25519_verify($data, $sig, $pub);
+				$verify = ed25519_verify(pack("H*", sha2($data, 256)), $sig, $pub);
 			else
 				$verify = rsa_verify($data, $sig, $pub,
 					[
