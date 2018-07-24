@@ -234,7 +234,7 @@ class ARC
 		$value = pcre_replace(''/\r\n([ \t])/'', "$1", $value);
 		$value = pcre_replace(''/[ \t]+/'', " ", $value);
 		$value = pcre_replace(''/[ \t]*$/'', "", $value);
-		return trim($name) . ":" . trim($value) . "\r\n";
+		return trim($name) . ":" . trim($value);
 	}
 
 	static function taglist($list)
