@@ -203,7 +203,7 @@ class ARC
 				$data .= "\r\n";
 		}
 
-		$sig = rsa_sign($data, $privatekey, ["id" => true, "hash" => "sha256"]);
+		$sig = rsa_sign($data, $privatekey, ["id" => ($privatekey[0:4] == "pki:"), "hash" => "sha256"]);
 		$headers[2][1] .= static::split_header_b(base64_encode($sig));
 
 		MIME("0")->addHeader($headers[0][0], $headers[0][1], ["encode" => false]);
