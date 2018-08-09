@@ -15,7 +15,7 @@ SMTP client class
 // Returns [success, isPermanent, lastError]
 function SMTPDeliver($address, $sender, $recipients, $fp)
 {
-	$smtp = SMTPClient($address, ["debug" => true]);
+	$smtp = SMTPClient($address);
 	if (!$smtp->connect()) return [false, $smtp->isPermanent(), $smtp->getLastError()];
 	if (!$smtp->EHLO(gethostname())) return [false, $smtp->isPermanent(), $smtp->getLastError()];
 	if (!$smtp->MAILFROM($sender)) return [false, $smtp->isPermanent(), $smtp->getLastError()];
