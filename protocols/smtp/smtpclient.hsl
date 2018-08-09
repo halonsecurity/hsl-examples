@@ -4,7 +4,6 @@ class SMTPClient
 	private $address = none;
 	private $port = none;
 	private $timeout = none;
-	private $debug = false;
 	private $lasterror = "";
 	private $permanent = false;
 
@@ -13,7 +12,6 @@ class SMTPClient
 		$this->address = $address;
 		$this->port = $opts["port"] ?? 25;
 		$this->timeout = $opts["timeout"] ?? 30;
-		$this->debug = $opts["debug"] ?? false;
 	}
 
 	function connect()
@@ -103,9 +101,6 @@ class SMTPClient
 
 	function command($cmd, $expectcode)
 	{
-		if ($this->debug)
-				echo "SMTPClient  send: '$cmd'";
-
 		if ($cmd)
 			if (!$this->socket->send("$cmd\r\n"))
 				return $this->__set_error();
@@ -128,9 +123,6 @@ class SMTPClient
 			$line = $this->__readline();
 			if (!is_string($line))
 				return; // disconnect
-
-			if ($this->debug)
-				echo "SMTPClient reply: '".trim($line)."'";
 		
 			if (strlen($line) < 4)
 				return [-1, ["Too short reply: $line"]]; // too short reply
