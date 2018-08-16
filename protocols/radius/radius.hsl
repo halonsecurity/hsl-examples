@@ -36,7 +36,7 @@ class Radius
 		[$status, $id, $len, $authenticator2, $attributes] = unpack("CCna16a*", $resp);
 		if ($id != $requestid)
 			return -1;
-		if ($authenticator2 != pack("H*", md5(pack("CCna*a*a*", $status, $id, $len, $authenticator, $attributes ?? "", $this->secret))))
+		if ($authenticator2 != pack("H*", md5(pack("CCna*a*a*", $status, $id, $len, $authenticator, $attributes, $this->secret))))
 			return -1;
 		if ($status == 3) return 0;
 		if ($status != 2) return -1;
