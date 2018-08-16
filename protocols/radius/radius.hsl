@@ -20,10 +20,11 @@ class Radius
 		$attributes .= pack("CCa*", 0x01, 2 + strlen($username), $username);
 		$attributes .= pack("CCa*", 0x02, 2 + 16, $this->__encrypt_pass($this->secret, $authenticator, $password));
 
+		$requestid = rand(0, 255);
 		$data = 
 			pack("CCna*a*",
 				1,
-				0xb2,
+				$requestid,
 				20 + strlen($attributes),
 				$authenticator,
 				$attributes,
@@ -33,6 +34,8 @@ class Radius
 		if (!$resp) return -1;
 
 		[$status, $id, $len, $authenticator2, $attributes] = unpack("CCna16a*", $resp);
+		if ($id != $requestid)
+			return -1;
 		if ($authenticator2 != pack("H*", md5(pack("CCna*a*a*", $status, $id, $len, $authenticator, $attributes ?? "", $this->secret))))
 			return -1;
 		if ($status == 3) return 0;
