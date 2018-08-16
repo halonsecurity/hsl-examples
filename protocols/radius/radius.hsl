@@ -1,0 +1,68 @@
+class Radius
+{
+	private $socket = none;
+	private $secret = "";
+	constructor($host, $secret, $opts = [])
+	{
+		$this->socket = Socket(Socket::AF($host), "SOCK_DGRAM");
+		$this->socket->settimeout($opts["timeout"] ?? 3);
+		$this->socket->connect($host, $opts["port"] ?? 1812);
+		$this->secret = $secret;
+	}
+	function auth($username, $password, $clientip = none)
+	{
+		$secrethash = md5(uuid());
+		$authenticator = pack("H*", $secrethash);
+
+		$attributes = "";
+		if ($clientip)
+			$attributes .= pack("CCa*", 0x0e, 2 + 4, inet_pton($clientip));
+		$attributes .= pack("CCa*", 0x01, 2 + strlen($username), $username);
+		$attributes .= pack("CCa*", 0x02, 2 + 16, $this->__encrypt_pass($this->secret, $authenticator, $password));
+
+		$data = 
+			pack("CCna*a*",
+				1,
+				0xb2,
+				20 + strlen($attributes),
+				$authenticator,
+				$attributes,
+			);
+		if (!$this->socket->send($data)) return -1;
+		$resp = $this->socket->recv(65535);
+		if (!$resp) return -1;
+
+		[$status, $id, $len, $authenticator2, $attributes] = unpack("CCna16a*", $resp);
+		if ($authenticator2 != pack("H*", md5(pack("CCna*a*a*", $status, $id, $len, $authenticator, $attributes ?? "", $this->secret))))
+			return -1;
+		if ($status == 3) return 0;
+		if ($status != 2) return -1;
+
+		$ret = [];
+		if ($attributes)
+		{
+			$offset = 0;
+			while ($offset < strlen($attributes))
+			{
+				[$id, $len] = unpack("CC", $attributes, $offset);
+				if ($id == 26)
+				{
+					[$vendor, $vendorid, $data] = unpack("nna*", $attributes[$offset + 4:$offset + $len]);
+					if ($vendor == 33234)
+						$ret[$vendorid >> 8] = $data;
+				}
+				$offset += $len;
+			}
+		}
+		return $ret;
+	}
+	private function __encrypt_pass($secret, $authenticator, $password)
+	{
+		$a = pack("a16", $password);
+		$b = pack("H*", md5($secret.$authenticator));
+		$r = "";
+		for ($i = 0; $i < 16; $i++)
+			$r .= chr(ord($a[$i]) ^ ord($b[$i]));
+		return $r;
+	}
+}
