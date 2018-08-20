@@ -11,8 +11,7 @@ class Radius
 	}
 	function auth($username, $password, $clientip = none)
 	{
-		$secrethash = md5(uuid());
-		$authenticator = pack("H*", $secrethash);
+		$authenticator = random_bytes(16);
 
 		$attributes = "";
 		if ($clientip)
