@@ -2,6 +2,7 @@ class Radius
 {
 	private $socket = none;
 	private $secret = "";
+
 	constructor($host, $secret, $opts = [])
 	{
 		$this->socket = Socket(Socket::AF($host), "SOCK_DGRAM");
