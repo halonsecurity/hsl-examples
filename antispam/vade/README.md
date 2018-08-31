@@ -1,4 +1,4 @@
-## VADE(options)
+## VADE(host, opts)
 Scans a message with Vade's Content Filter REST API.
 
 **Params**
