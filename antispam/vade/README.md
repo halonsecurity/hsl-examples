@@ -20,7 +20,7 @@ The following options are available in the **tls** array.
 - enabled `boolean` - Enable TLS for the specific socket
 - opts `array` - All available options can be found on [here](http://docs.halon.se/hsl/functions.html?highlight=tlssocket#TLSSocket)
 
-## scan($fp)
+## scan(fp)
 
 Scans a message
 
