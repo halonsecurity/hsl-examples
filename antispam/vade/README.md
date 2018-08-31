@@ -38,7 +38,7 @@ Pings the Vade's service to check if it's responding
 
 **Returns**: `boolean`
 
-**Example**
+## Example
 
 ```java
 include "vade";
