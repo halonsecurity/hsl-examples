@@ -1,16 +1,54 @@
-## ScanVADE(options)
-Scan a message with Vadesecure's Daemon remotely over IP. This function should be used with the "per_message" cache.
+## VADE(options)
+Scans a message with Vade's Content Filter REST API.
 
 **Params**
 
-- options `array` - options array
+- host `string` - IP or hostname to the Vade service. **Required**.
+- opts `array` - options array
 
-**Returns**: array of results, None on error.
+**Returns**: class object.
 
-The following options are available in the **options** array.
+The following options are available in the **opts** array.
 
-- host `string` - IP-address of the Vadesecure daemon. required
-- port `number` - TCP port. The default is 8083.
-- timeout `number` - Timeout in seconds. The default is 5 seconds.
+- port `number` - TCP port. The default is 8080.
+- timeout `number` - Timeout in seconds. The default is 10 seconds.
+- tls `array` - TLS settings.
+- max_message_size `number` - The max message size in bytes. The default is 5 MiB.
 
-The result array usually contains, "Score" (Number), "State" (Number) and "Cause" (String).
+The following options are available in the **tls** array.
+
+- enabled `boolean` - Enable TLS for the specific socket
+- opts `array` - All available options can be found on [here](http://docs.halon.se/hsl/functions.html?highlight=tlssocket#TLSSocket)
+
+## scan($fp)
+
+Scans a message
+
+**Params**
+
+- fp `File` - file object such as return type of [GetMailFile()](http://docs.halon.se/hsl/data.html#data.GetMailFile). **Required**.
+
+**Returns**: associative array containing the result of the scan
+
+**Return type**: `array`, when an error occur the "error" index is available.
+
+## ping()
+
+Pings the Vade's service to check if it's responding
+
+**Returns**: `boolean`
+
+**Example**
+
+```java
+include "vade";
+
+$vade = VADE("172.16.78.25", ["port" => 8080, "tls" => ["enabled" => true]]);
+$result = $vade->scan(GetMailFile());
+
+if (!$result["error"]) {
+    echo $result;
+} else {
+    echo "Error - ".$result["error"];
+}
+```

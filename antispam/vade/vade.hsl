@@ -1,53 +1,91 @@
-function ScanVADE($opts)
+class VADE
 {
-	global $senderip, $senderhelo, $sender, $recipients;
+	private $host = none;
+	private $port = none;
+	private $timeout = none;
+	private $tls = none;
+	private $msgsize = none;
 
-	$host = $opts["host"];
-	$socket = Socket(Socket::AF($host), "SOCK_STREAM");
-	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
-	if (!$socket->connect($host, number($opts["port"] ?? 8083))) return;
-
-	$sendvparam = function($socket, $request) {
-		if (!$socket->send($request."\r\n")) return;
-		if (!$resp = $socket->recv(8192)) return;
-		if ($resp[0:strlen($request) + 6] != $request.": OK\r\n") return;
-		return $resp[strlen($request) + 6:];
-	};
-
-	if (!is_string($sendvparam($socket, "VRPARAM inet=$senderip"))) return;
-	if ($senderhelo and !is_string($sendvparam($socket, "VRPARAM helo=$senderhelo"))) return;
-	if ($sender and !is_string($sendvparam($socket, "VRPARAM mailfrom=$sender"))) return;
-	foreach ($recipients as $recipient)
-		if (!is_string($sendvparam($socket, "VRPARAM rcptto=$recipient"))) return;
-
-	$request = "VRSCANB";
-	if (!$socket->send($request."\r\n")) return;
-	if (!$resp = $socket->recv(8192)) return;
-	if ($resp[0:2] != "OK") return;
-
-	$f = GetMailFile();
-	$b = 0;
-	while ($str = $f->read(8192))
+	constructor($host, $opts = [])
 	{
-		if (!$socket->send($str)) return;
-		$b += strlen($str);
-		if ($b > 5 * 1024 * 1024)
-			break;
+		$this->host = $host;
+		$this->port = $opts["port"] ?? 8080;
+		$this->timeout = $opts["timeout"] ?? 10;
+		$this->tls = $opts["tls"] ?? ["enabled" => false];
+		$this->msgsize = number($opts["max_message_size"] ?? (5 * 1024 * 1024));
 	}
 
-	if (!$socket->send("\r\n.\r\n")) return;
-	if (!$resp = $socket->recv(8192)) return;
-	if ($resp[0:strlen($request) + 5] != $request.": OK,") return;
-
-	$data = trim($resp[strlen($request) + 5:]);
-	$response = [];
-	foreach (explode("\t", $data) as $param)
+	function ping()
 	{
-		[$key, $value] = explode("=", $param, 2);
-		if ($key == "State" or $key == "Score")
-			$value = number($value);
-		$response[$key] = $value;
+		$protocol = $this->tls["enabled"] ? "https://" : "http://";
+		$result = http($protocol.$this->host.":".$this->port."/api/v1/info/ping");
+		if (!is_string($result))
+			return ["error" => "Unable to parse result"];
+		return json_decode($result)["ping"];
 	}
 
-	return $response;
+	function scan($fp)
+	{
+		global $senderip;
+		global $senderhelo;
+		global $sender;
+		global $recipients;
+
+		$socket = Socket(Socket::AF($this->host), "SOCK_STREAM");
+		if (!$socket->settimeout($this->timeout)) return ["error" => "Failed to set timeout"];
+		if (!$socket->connect($this->host, $this->port)) return ["error" => "Failed to connect"];
+
+		if ($this->tls["enabled"]) {
+			$socket = TLSSocket($socket, $this->tls["opts"] ?? []);
+			if (!$socket->handshake()) return ["error" => "Failed TLS"];
+		}
+
+		$length = $fp->seek(0, "SEEK_END");
+		if ($length > $this->msgsize)
+			$length = $this->msgsize;
+		$fp->seek(0, "SEEK_SET");
+
+		$headers = [
+			"POST /api/v1/scan HTTP/1.0",
+			"Host: ".$this->host.":".$this->port,
+			"User-Agent: Halon HTTP client (HSL)",
+			"Accept: application/json",
+			"Content-Length: $length",
+			"X-Inet: $senderip",
+			"X-Helo: $senderhelo",
+			"X-Mailfrom: $sender"
+		];
+
+		foreach ($recipients as $rcpt) {
+			$headers[] = "X-Rcptto: $rcpt";
+		}
+
+		if (!$socket->send(implode("\r\n", $headers)."\r\n\r\n")) return ["error" => "An error occurred when sending data"];
+
+		$b = 0;
+		while ($str = $fp->read(($this->msgsize - $b < 8192) ? ($this->msgsize - $b) : 8192)) {
+			if (!$socket->send($str)) return ["error" => "An error occurred when sending data"];
+			$b += strlen($str);
+			if ($b >= $this->msgsize)
+				break;
+		}
+
+		$response = "";
+		while ($resp = $socket->recv(8192)) {
+			$response .= $resp;
+		}
+
+		$socket->shutdown("SHUT_RDWR");
+		$socket->close();
+
+		[$headers, $content] = explode("\r\n\r\n", $response);
+		[$http, $status, $msg] = explode(" ", explode("\r\n", $headers)[0]);
+
+		if (number($status) > 299)
+			return ["error" => "Failed to scan mail ($status $msg)"];
+		if (!is_string($content))
+			return ["error" => "Unable to parse result"];
+
+		return json_decode($content);
+	}
 }
