@@ -70,3 +70,25 @@ Send any kind of available command to the weakforced service.
 - trunclen `number` - Truncate the hashed password by bits, by default it will use full length.
 
 **Returns**: `string`
+
+## Example
+
+```java
+$wfuser = WforcedUser($saslusername, $saslpassword, $senderip, ["attrs" => ["policyclient" => $serverip]]);
+$wf = Wforced(["url" => "http://172.16.78.25", "port" => 8084, "username" => "admin", "password" => "admin"]);
+
+switch ($wf->allow($wfuser)) {
+   case 0:
+       if (validate_credentials($saslusername, $saslpassword) == 1) {
+           $wf->report($wfuser, true);
+           Accept();
+       } else {
+           $wf->report($wfuser, false);
+           Reject();
+       }
+   case -1:
+       Reject();
+   default:
+       Defer();
+}
+```
