@@ -31,7 +31,7 @@ class VADE
 		global $sender;
 		global $recipients;
 
-		$socket = Socket(Socket::AF($this->host), "SOCK_STREAM");
+		$conn = $socket = Socket(Socket::AF($this->host), "SOCK_STREAM");
 		if (!$socket->settimeout($this->timeout)) return ["error" => "Failed to set timeout"];
 		if (!$socket->connect($this->host, $this->port)) return ["error" => "Failed to connect"];
 
@@ -75,8 +75,8 @@ class VADE
 			$response .= $resp;
 		}
 
-		$socket->shutdown("SHUT_RDWR");
-		$socket->close();
+		$conn->shutdown("SHUT_RDWR");
+		$conn->close();
 
 		[$headers, $content] = explode("\r\n\r\n", $response);
 		[$http, $status, $msg] = explode(" ", explode("\r\n", $headers)[0]);
