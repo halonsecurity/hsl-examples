@@ -1,0 +1,32 @@
+class InfluxDB
+{
+	private $socket = none;
+
+	constructor($host, $opts = [])
+	{
+		$this->socket = Socket(Socket::AF($host), "SOCK_DGRAM");
+		$this->socket->connect($host, $opts["port"] ?? 8089);
+	}
+
+	function send($measurement, $values, $tags = none)
+	{
+		$data = pcre_replace("[, ]", "\\$0", $measurement);
+		if ($tags)
+			foreach ($tags as $k => $v)
+				$data .= "," . pcre_replace("[, =]", "\\$0", $k) . "=" . pcre_replace("[, =]", "\\$0", $v);
+		$data .= " ";
+		$x = 0;
+		foreach ($values as $k => $v)
+		{
+			if ($x != 0)
+				$data .= ",";
+			$data .= pcre_replace("[, =]", "\\$0", $k) . "=";
+			if (is_string($v))
+				$data .= "\"" . pcre_replace("[\"]", "\\$0", $v) . "\"";
+			else
+				$data .= $v;
+			++$x;
+		}
+		$this->socket->send($data);
+	}
+}
