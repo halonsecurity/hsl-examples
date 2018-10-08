@@ -2,10 +2,10 @@ class InfluxDB
 {
 	private $socket = none;
 
-	constructor($host, $opts = [])
+	constructor($address, $opts = [])
 	{
-		$this->socket = Socket(Socket::AF($host), "SOCK_DGRAM");
-		$this->socket->connect($host, $opts["port"] ?? 8089);
+		$this->socket = Socket(Socket::AF($address), "SOCK_DGRAM");
+		$this->socket->connect($address, $opts["port"] ?? 8089);
 	}
 
 	function send($measurement, $values, $tags = none)
