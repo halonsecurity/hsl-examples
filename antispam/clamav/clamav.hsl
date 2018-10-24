@@ -1,6 +1,7 @@
 function clamav($mailpath)
 {
     $socket = Socket("AF_UNIX", "SOCK_STREAM");
+    $socket->settimeout(30);
     if (!$socket->connect("/var/run/clamd.sock"))
         return none;
 
@@ -8,7 +9,7 @@ function clamav($mailpath)
         return none;
 
     $response = "";
-	while ($resp = $socket->recv(8192))
+    while ($resp = $socket->recv(8192))
         $response .= $resp;
     $socket->close();
 
