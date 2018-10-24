@@ -1,0 +1,93 @@
+function ctasd($senderip, $sender, $mailpath)
+{
+    $socketpath = "/tmp/ctasd.sock";
+    $socket = Socket("AF_UNIX", "SOCK_STREAM");
+    if (!$socket->connect($socketpath))
+        return none;
+
+    $body = [];
+    $body[] = "x-ctch-mailfrom: $sender";
+    $body[] = "x-ctch-senderip: $senderip";
+    $body[] = "x-ctch-pver: 0000001";
+    $body[] = "x-ctch-filename: $mailpath";
+    $body = implode("\r\n", $body);
+
+    $request = [];
+    $request[] = "POST /ctasd/ClassifyMessage_File HTTP/1.0";
+    $request[] = "Accept-Language: en-us";
+    $request[] = "Accept: */*";
+    $request[] = "Host: 127.0.0.1";
+    $request[] = "Content-Length: " + strlen($body);
+    $request[] = "";
+    $request[] = $body;
+    $request = implode("\r\n", $request);
+
+    if (!$socket->send($request))
+        return none;
+
+    $response = "";
+    while ($resp = $socket->recv(8192))
+        $response .= $resp;
+    $socket->close();
+
+    $result = [];
+    foreach (explode("\r\n", $response) as $line)
+    {
+        if ($action = pcre_match("^X-CTCH-Spam: (.*)$", $line))
+            $result["spam"] = $action[1];
+        if ($action = pcre_match("^X-CTCH-VOD: (.*)$", $line))
+            $result["vod"] = $action[1];
+        if ($action = pcre_match("^X-CTCH-RefID: (.*)$", $line))
+            $result["refid"] = $action[1];
+        if ($action = pcre_match("^X-CTCH-Rules: (.*)$", $line))
+            $result["rules"] = $action[1];
+        if ($action = pcre_match("^X-CTCH-Error: (.*)$", $line))
+            $result["error"] = $action[1];
+    }
+    return $result;
+}
+
+function ctipd($senderip)
+{
+    $socketpath = "/tmp/ctipd.sock";
+    $socket = Socket("AF_UNIX", "SOCK_STREAM");
+    if (!$socket->connect($socketpath))
+        return none;
+
+    $body = [];
+    $body[] = "x-ctch-request-id: NAN";
+    $body[] = "x-ctch-request-type: classifyip";
+    $body[] = "x-ctch-pver: 1.0";
+    $body[] = "";
+    $body[] = "x-ctch-ip: $senderip";
+    $body = implode("\r\n", $body);
+
+    $request = [];
+    $request[] = "POST /ctIPd/iprep HTTP/1.0";
+    $request[] = "Accept-Language: en-us";
+    $request[] = "Accept: */*";
+    $request[] = "Host: 127.0.0.1";
+    $request[] = "Content-Length: " + strlen($body);
+    $request[] = "";
+    $request[] = $body;
+    $request = implode("\r\n", $request);
+
+    if (!$socket->send($request))
+        return none;
+
+    $response = "";
+    while ($resp = $socket->recv(8192))
+        $response .= $resp;
+    $socket->close();
+
+    $result = none;
+    foreach (explode("\r\n", $response) as $line)
+    {
+        if ($action = pcre_match("^x-ctch-dm-action:(.*)$", $line))
+        {
+            $result = $action[1];
+            break;
+        }
+    }
+    return $result;
+}
