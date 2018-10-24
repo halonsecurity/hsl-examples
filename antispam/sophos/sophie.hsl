@@ -2,6 +2,7 @@ function sophie($mailpath)
 {
     $socketpath = "/var/run/sophie.sock";
     $socket = Socket("AF_UNIX", "SOCK_STREAM");
+    $socket->settimeout(30);
     if (!$socket->connect($socketpath))
         return none;
     if (!$socket->send("$mailpath\n"))
