@@ -1,0 +1,21 @@
+function sophie($mailpath)
+{
+    $socketpath = "/var/run/sophie.sock";
+    $socket = Socket("AF_UNIX", "SOCK_STREAM");
+    if (!$socket->connect($socketpath))
+        return none;
+    if (!$socket->send("$mailpath\n"))
+        return none;
+
+    $response = "";
+	while (($resp = $socket->recv(1)) and $resp[0] != "\n")
+        $response .= $resp;
+    $socket->close();
+
+    [$code, $virus] = explode(":", $response);
+    if ($code == "1")
+        return $virus;
+    if ($code == "0")
+        return false; 
+    return none;
+}

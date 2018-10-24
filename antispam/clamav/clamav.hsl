@@ -1,0 +1,31 @@
+function clamav($mailpath)
+{
+    $socket = Socket("AF_UNIX", "SOCK_STREAM");
+    if (!$socket->connect("/var/run/clamd.sock"))
+        return none;
+
+    if (!$socket->send("MULTISCAN $mailpath\n"))
+        return none;
+
+    $response = "";
+	while ($resp = $socket->recv(8192))
+        $response .= $resp;
+    $socket->close();
+
+    foreach (explode("\n", $response) as $line)
+    {
+        if ($result = pcre_match("^[^:]*: (.*)$", $line))
+        {
+            if ($result[1] == "OK")
+                return false;
+            if ($match = pcre_match("^(.*) ([^ ]+)$", $result[1]))
+            {
+                if ($match[2] == "FOUND")
+                    return $match[1];
+                if ($match[2] == "ERROR")
+                    echo "Error: ".$match[1];
+            }
+        }
+    }
+    return none;
+}
