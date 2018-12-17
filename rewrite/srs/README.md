@@ -26,7 +26,7 @@ Apply the SRS forward scheme to an address
 - address `string` - The email address
 - opts `array` - options array
 
-**Returns**: A `string` containing an email address the SRS removed. On error an empty string is returned.
+**Returns**: A `string` containing an email address the SRS removed. On error `none` is returned.
 
 The following options are available in the **opts** array.
 
