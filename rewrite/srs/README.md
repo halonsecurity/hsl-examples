@@ -32,4 +32,4 @@ The following options are available in the **opts** array.
 
 - secret `string` - A secret. The default is an empty secret.
 - hashlen `number` - Number of charaters to include from the secret hash. The default is 4.
-- maxage `number` - Number of days the SRS address should be valid.
+- maxage `number` - Number of days the SRS address should be valid. The default is 21 days.
