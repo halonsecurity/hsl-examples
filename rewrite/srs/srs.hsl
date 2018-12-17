@@ -19,10 +19,10 @@ function SRS_reverse($address, $opts = [])
 
 	if (strtolower($address[0:5]) != "srs0=") return "";
 	$part = explode("=", explode("@", $address)[0]);
-	if (count($part) < 5) return "";
+	if (count($part) < 5) return;
 
 	$key = base64_encode(pack("H*", hmac_sha1($secret, strtolower($part[2].$part[3].implode("=", $part[4:])))));
-	if (strtolower($key[0:$hashlen]) != strtolower($part[1])) return "";
+	if (strtolower($key[0:$hashlen]) != strtolower($part[1])) return;
 
 	if (strlen($part[2]) != 2) return "";
 	$days = 0;
@@ -37,7 +37,7 @@ function SRS_reverse($address, $opts = [])
 	}
 	$now = floor(time() / 86400) % (32 ** 2);
 	if ($now < $days) $now += (32 ** 2);
-	if ($now > $days + $maxage) return "";
+	if ($now > $days + $maxage) return;
 
 	return implode("=", $part[4:])."@".$part[3];
 }
