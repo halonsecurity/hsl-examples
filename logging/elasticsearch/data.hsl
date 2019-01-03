@@ -1,0 +1,103 @@
+include "elastic.settings";
+
+$logdata["direction"] = "inbound";
+
+function sendlog($logdata = []) {
+	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
+	global $messageid, $senderip, $serverid, $senderport, $serverip, $serverport; // connect
+	global $senderhelo, $tlsstarted, $saslusername; // auth
+	global $saslauthed, $senderdomain, $sender; // mail from
+	global $recipientdomain, $recipient, $transportid; // rcpt to
+	global $actionid; // data
+
+	$time = time();
+	$receivedtime = str_replace(".", "", $time);
+	if (strlen($receivedtime) > 13) $receivedtime = substr($receivedtime, 0, 13);
+
+	$logdata += [
+		"serial" => serial(),
+		"hostname" => gethostname(),
+		"messageid" => $messageid,
+		"senderip" => $senderip,
+		"serverid" => $serverid,
+		"senderport" => $senderport,
+		"serverip" => $serverip,
+		"serverport" => $serverport,
+		"senderhelo" => $senderhelo,
+		"tlsstarted" => $tlsstarted,
+		"saslusername" => $saslusername,
+		"saslauthed" => $saslauthed,
+		"senderdomain" => $senderdomain,
+		"sender" => $sender,
+		"recipientdomain" => $recipientdomain,
+		"recipient" => $recipient,
+		"transportid" => $transportid,
+		"actionid" => $actionid,
+		"receivedtime" => $receivedtime,
+		"subject" => MIME("0")->getHeader("subject"),
+		"size" => MIME("0")->getSize(),
+		"owner" => ($logdata["direction"] == "outbound") ? $sender : $recipient,
+		"ownerdomain" => ($logdata["direction"] == "outbound") ? $senderdomain : $recipientdomain
+	];
+
+	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$messageid.":".$actionid;
+	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));
+}
+
+function Reject(...$args) {
+	global $logdata;
+	$logdata["action"] = "REJECT";
+	$logdata["reason"] = isset($args[0]) ? $args[0] : "";
+	sendlog($logdata);
+	builtin Reject(...$args);
+}
+function Deliver(...$args) {
+	global $logdata;
+	$logdata["action"] = "QUEUE";
+	sendlog($logdata);
+	builtin Deliver(...$args);
+}
+function Defer(...$args) {
+	global $logdata;
+	$logdata["action"] = "DEFER";
+	$logdata["reason"] = isset($args[0]) ? $args[0] : "";
+	sendlog($logdata);
+	builtin Defer(...$args);
+}
+function Delete(...$args) {
+	global $logdata;
+	$logdata["action"] = "DELETE";
+	sendlog($logdata);
+	builtin Delete(...$args);
+}
+function Quarantine(...$args) {
+	global $logdata;
+	$logdata["action"] = "QUARANTINE";
+	$logdata["reason"] = isset($args[1]["reason"]) ? $args[1]["reason"] : "";
+	sendlog($logdata);
+	builtin Quarantine(...$args);
+}
+function ScanRPD(...$args) {
+	global $logdata;
+	$outbound = $args[0]["outbound"] ?? false;
+	$logdata["score_rpd"] = builtin ScanRPD([ "outbound" => $outbound ]);
+	$logdata["score_rpd_refid"] = builtin ScanRPD([ "outbound" => $outbound, "refid" => true ]);
+	$logdata["score_rpdav"] = builtin ScanRPD([ "outbound" => $outbound, "extended_result" => true ])["virus_score"];
+	return builtin ScanRPD(...$args);
+}
+function ScanSA(...$args) {
+	global $logdata;
+	$logdata["scores"]["sa"] = builtin ScanSA();
+	$logdata["scores"]["sa_rules"] = builtin ScanSA(["rules" => true]);
+	return builtin ScanSA(...$args);
+}
+function ScanKAV(...$args) {
+	global $logdata;
+	$logdata["scores"]["kav"] = builtin ScanKAV() ? : "";
+	return builtin ScanKAV(...$args);
+}
+function ScanCLAM(...$args) {
+	global $logdata;
+	$logdata["scores"]["clam"] = builtin ScanCLAM() ? : "";
+	return builtin ScanCLAM(...$args);
+}

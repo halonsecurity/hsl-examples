@@ -1,0 +1,54 @@
+include "elastic.settings";
+
+$logdata["direction"] = "inbound";
+
+function sendlog($logdata = []) {
+	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
+	global $messageid, $senderip, $serverid, $senderport, $serverip, $serverport; // connect
+	global $senderhelo, $tlsstarted, $saslusername; // auth
+	global $saslauthed, $senderdomain, $sender; // mail from
+	global $recipientdomain, $recipient, $transportid; // rcpt to
+
+	$time = time();
+	$receivedtime = str_replace(".", "", $time);
+	if (strlen($receivedtime) > 13) $receivedtime = substr($receivedtime, 0, 13);
+
+	$logdata += [
+		"serial" => serial(),
+		"hostname" => gethostname(),
+		"messageid" => $messageid,
+		"senderip" => $senderip,
+		"serverid" => $serverid,
+		"senderport" => $senderport,
+		"serverip" => $serverip,
+		"serverport" => $serverport,
+		"senderhelo" => $senderhelo,
+		"tlsstarted" => $tlsstarted,
+		"saslusername" => $saslusername,
+		"saslauthed" => $saslauthed,
+		"senderdomain" => $senderdomain,
+		"sender" => $sender,
+		"recipientdomain" => $recipientdomain,
+		"recipient" => $recipient,
+		"transportid" => $transportid,
+		"receivedtime" => $receivedtime
+	];
+
+	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype;
+	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));
+}
+
+function Reject(...$args) {
+	global $logdata;
+	$logdata["action"] = "REJECT";
+	$logdata["reason"] = isset($args[0]) ? $args[0] : "";
+	sendlog($logdata);
+	builtin Reject(...$args);
+}
+function Defer(...$args) {
+	global $logdata;
+	$logdata["action"] = "DEFER";
+	$logdata["reason"] = isset($args[0]) ? $args[0] : "";
+	sendlog($logdata);
+	builtin Defer(...$args);
+}
