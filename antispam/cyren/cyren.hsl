@@ -1,6 +1,6 @@
 function ctasd($senderip, $sender, $mailpath)
 {
-    $socketpath = "/tmp/ctasd.sock";
+    $socketpath = "/var/run/ctasd.sock";
     $socket = Socket("AF_UNIX", "SOCK_STREAM");
     $socket->settimeout(30);
     if (!$socket->connect($socketpath))
@@ -50,7 +50,7 @@ function ctasd($senderip, $sender, $mailpath)
 
 function ctipd($senderip)
 {
-    $socketpath = "/tmp/ctipd.sock";
+    $socketpath = "/var/run/ctipd.sock";
     $socket = Socket("AF_UNIX", "SOCK_STREAM");
     $socket->settimeout(30);
     if (!$socket->connect($socketpath))
