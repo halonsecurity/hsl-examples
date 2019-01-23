@@ -1,4 +1,4 @@
-This example provides a [Mail::SRS](http://search.cpan.org/perldoc?Mail::SRS) compatible sender rewrite scheme implementation, our [documentation](http://wiki.halon.se/SRS) shows how to implement it properly.
+This example provides a [Mail::SRS](http://search.cpan.org/perldoc?Mail::SRS) compatible sender rewrite scheme implementation, our [documentation](https://support.halon.io/hc/en-us/articles/360001368529) shows how to implement it properly.
 
 ## SRS_forward(address, alias, opts)
 
