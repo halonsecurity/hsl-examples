@@ -35,8 +35,6 @@ function sendlog($logdata = []) {
 		"actionid" => $actionid,
 		"subject" => MIME("0")->getHeader("subject"),
 		"size" => MIME("0")->getSize(),
-		"owner" => ($logdata["direction"] == "outbound") ? $transaction["sender"] : $recipient,
-		"ownerdomain" => ($logdata["direction"] == "outbound") ? $transaction["senderdomain"] : $recipientdomain,
 		"receivedtime" => $receivedtime
 	];
 
