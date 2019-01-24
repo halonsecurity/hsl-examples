@@ -18,8 +18,10 @@ function sendlog() {
 		"transfertime" => $transfertime,
 		"action" => $action == "" ? "DELIVER" : $action,
 		"sender" => $sender,
+		"senderlocalpart" => $senderlocalpart,
 		"senderdomain" => $senderdomain,
 		"recipient" => $recipient,
+		"recipientlocalpart" => $recipientlocalpart,
 		"recipientdomain" => $recipientdomain,
 		"transportid" => $transportid,
 		"finishedtime" => $finishedtime

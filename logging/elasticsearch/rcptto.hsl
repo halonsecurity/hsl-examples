@@ -28,7 +28,6 @@ function sendlog($logdata = []) {
 		"senderlocalpart" => $transaction["senderlocalpart"],
 		"senderdomain" => $transaction["senderdomain"],
 		"senderparams" => $transaction["senderparams"],
-		"recipients" => $transaction["recipients"],
 		"recipient" => $recipient,
 		"recipientlocalpart" => $recipientlocalpart,
 		"recipientdomain" => $recipientdomain,
