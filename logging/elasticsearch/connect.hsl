@@ -2,7 +2,7 @@ include "elastic.settings";
 
 function sendlog($logdata = []) {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
-	global $messageid, $senderip, $serverid, $senderport, $serverip, $serverport; // connect
+	global $transaction, $senderip, $senderport, $serverip, $serverport, $serverid; // connect
 
 	$time = time();
 	$receivedtime = str_replace(".", "", $time);
@@ -11,12 +11,12 @@ function sendlog($logdata = []) {
 	$logdata += [
 		"serial" => serial(),
 		"hostname" => gethostname(),
-		"messageid" => $messageid,
+		"messageid" => $transaction["id"],
 		"senderip" => $senderip,
-		"serverid" => $serverid,
 		"senderport" => $senderport,
 		"serverip" => $serverip,
 		"serverport" => $serverport,
+		"serverid" => $serverid,
 		"receivedtime" => $receivedtime
 	];
 

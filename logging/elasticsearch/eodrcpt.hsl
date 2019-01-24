@@ -1,14 +1,11 @@
 include "elastic.settings";
 
-$logdata["direction"] = "inbound";
-
 function sendlog($logdata = []) {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
-	global $messageid, $senderip, $serverid, $senderport, $serverip, $serverport; // connect
+	global $transaction, $senderip, $senderport, $serverip, $serverport, $serverid; // connect
 	global $senderhelo, $tlsstarted, $saslusername; // auth
-	global $saslauthed, $senderdomain, $sender; // mail from
-	global $recipientdomain, $recipient, $transportid; // rcpt to
-	global $actionid; // data
+	global $saslauthed; // mail from
+	global $recipient, $recipientlocalpart, $recipientdomain, $transportid, $actionid; // eodrcpt
 
 	$time = time();
 	$receivedtime = str_replace(".", "", $time);
@@ -17,27 +14,31 @@ function sendlog($logdata = []) {
 	$logdata += [
 		"serial" => serial(),
 		"hostname" => gethostname(),
-		"messageid" => $messageid,
+		"messageid" => $transaction["id"],
 		"senderip" => $senderip,
-		"serverid" => $serverid,
 		"senderport" => $senderport,
 		"serverip" => $serverip,
 		"serverport" => $serverport,
+		"serverid" => $serverid,
 		"senderhelo" => $senderhelo,
 		"tlsstarted" => $tlsstarted,
 		"saslusername" => $saslusername,
 		"saslauthed" => $saslauthed,
-		"senderdomain" => $senderdomain,
-		"sender" => $sender,
-		"recipientdomain" => $recipientdomain,
+		"sender" => $transaction["sender"],
+		"senderlocalpart" => $transaction["senderlocalpart"],
+		"senderdomain" => $transaction["senderdomain"],
+		"senderparams" => $transaction["senderparams"],
+		"recipients" => $transaction["recipients"],
 		"recipient" => $recipient,
+		"recipientlocalpart" => $recipientlocalpart,
+		"recipientdomain" => $recipientdomain,
 		"transportid" => $transportid,
 		"actionid" => $actionid,
-		"receivedtime" => $receivedtime,
 		"subject" => MIME("0")->getHeader("subject"),
 		"size" => MIME("0")->getSize(),
-		"owner" => ($logdata["direction"] == "outbound") ? $sender : $recipient,
-		"ownerdomain" => ($logdata["direction"] == "outbound") ? $senderdomain : $recipientdomain
+		"owner" => ($logdata["direction"] == "outbound") ? $transaction["sender"] : $recipient,
+		"ownerdomain" => ($logdata["direction"] == "outbound") ? $transaction["senderdomain"] : $recipientdomain,
+		"receivedtime" => $receivedtime
 	];
 
 	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$messageid.":".$actionid;

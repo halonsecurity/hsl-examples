@@ -1,13 +1,11 @@
 include "elastic.settings";
 
-$logdata["direction"] = "inbound";
-
 function sendlog($logdata = []) {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
-	global $messageid, $senderip, $serverid, $senderport, $serverip, $serverport; // connect
-	global $senderhelo, $tlsstarted, $saslusername; // auth
-	global $saslauthed, $senderdomain, $sender; // mail from
-	global $recipientdomain, $recipient, $transportid; // rcpt to
+	global $transaction, $senderip, $senderport, $serverip, $serverport, $serverid; // connect
+	global $tlsstarted, $senderhelo; // helo
+	global $saslauthed, $saslusername; // auth
+	global $sender, $senderlocalpart, $senderdomain, $senderparams; // mailfrom
 
 	$time = time();
 	$receivedtime = str_replace(".", "", $time);
@@ -16,21 +14,20 @@ function sendlog($logdata = []) {
 	$logdata += [
 		"serial" => serial(),
 		"hostname" => gethostname(),
-		"messageid" => $messageid,
+		"messageid" => $transaction["id"],
 		"senderip" => $senderip,
-		"serverid" => $serverid,
 		"senderport" => $senderport,
 		"serverip" => $serverip,
 		"serverport" => $serverport,
-		"senderhelo" => $senderhelo,
+		"serverid" => $serverid,
 		"tlsstarted" => $tlsstarted,
-		"saslusername" => $saslusername,
+		"senderhelo" => $senderhelo,
 		"saslauthed" => $saslauthed,
-		"senderdomain" => $senderdomain,
+		"saslusername" => $saslusername,
 		"sender" => $sender,
-		"recipientdomain" => $recipientdomain,
-		"recipient" => $recipient,
-		"transportid" => $transportid,
+		"senderlocalpart" => $senderlocalpart,
+		"senderdomain" => $senderdomain,
+		"senderparams" => $senderparams,
 		"receivedtime" => $receivedtime
 	];
 

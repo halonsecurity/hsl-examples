@@ -3,8 +3,7 @@ include "elastic.settings";
 function sendlog($logdata = []) {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
 	global $transaction, $senderip, $senderport, $serverip, $serverport, $serverid; // connect
-	global $tlsstarted, $senderhelo; // helo
-	global $saslusername, $saslmechanism, $saslstate, $saslresponse; // auth
+	global $tlsstarted, $saslauthed, $saslusername, $senderhelo, $senderhelotype; // helo
 
 	$time = time();
 	$receivedtime = str_replace(".", "", $time);
@@ -20,11 +19,10 @@ function sendlog($logdata = []) {
 		"serverport" => $serverport,
 		"serverid" => $serverid,
 		"tlsstarted" => $tlsstarted,
-		"senderhelo" => $senderhelo,
+		"saslauthed" => $saslauthed,
 		"saslusername" => $saslusername,
-		"saslmechanism" => $saslmechanism,
-		"saslstate" => $saslstate,
-		"saslresponse" => $saslresponse,
+		"senderhelo" => $senderhelo,
+		"senderhelotype" => $senderhelotype,
 		"receivedtime" => $receivedtime
 	];
 
