@@ -8,9 +8,6 @@ function sendlog($logdata = []) {
 	global $recipient, $recipientlocalpart, $recipientdomain, $recipientparams, $transportid; // rcptto
 
 	$time = time();
-	$receivedtime = str_replace(".", "", $time);
-	if (strlen($receivedtime) > 13) $receivedtime = substr($receivedtime, 0, 13);
-
 	$logdata += [
 		"serial" => serial(),
 		"hostname" => gethostname(),
@@ -33,7 +30,7 @@ function sendlog($logdata = []) {
 		"recipientdomain" => $recipientdomain,
 		"recipientparams" => $recipientparams
 		"transportid" => $transportid
-		"receivedtime" => $receivedtime
+		"receivedtime" => round($time * 1000)
 	];
 
 	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype;

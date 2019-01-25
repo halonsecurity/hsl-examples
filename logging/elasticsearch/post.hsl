@@ -6,8 +6,6 @@ function sendlog() {
 	global $receivedtime, $retry, $retries, $errormsg, $errorcode, $errorndr, $transfertime, $action; // post-delivery
 
 	$time = time();
-	$finishedtime = str_replace(".", "", $time);
-	if (strlen($finishedtime) > 13) $finishedtime = substr($finishedtime, 0, 13);
 
 	$logdata["doc"] = [
 		"retry" => $retry,
@@ -24,7 +22,7 @@ function sendlog() {
 		"recipientlocalpart" => $recipientlocalpart,
 		"recipientdomain" => $recipientdomain,
 		"transportid" => $transportid,
-		"finishedtime" => $finishedtime
+		"finishedtime" => round($finishedtime * 1000)
 	];
 
 	$path = "/".$indexname."-".strftime($indexrotate, $receivedtime)."/".$indextype."/".$messageid.":".$actionid."/_update";

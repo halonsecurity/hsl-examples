@@ -8,9 +8,6 @@ function sendlog($logdata = []) {
 	global $sender, $senderlocalpart, $senderdomain, $senderparams; // mailfrom
 
 	$time = time();
-	$receivedtime = str_replace(".", "", $time);
-	if (strlen($receivedtime) > 13) $receivedtime = substr($receivedtime, 0, 13);
-
 	$logdata += [
 		"serial" => serial(),
 		"hostname" => gethostname(),
@@ -28,7 +25,7 @@ function sendlog($logdata = []) {
 		"senderlocalpart" => $senderlocalpart,
 		"senderdomain" => $senderdomain,
 		"senderparams" => $senderparams,
-		"receivedtime" => $receivedtime
+		"receivedtime" => round($time * 1000)
 	];
 
 	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype;

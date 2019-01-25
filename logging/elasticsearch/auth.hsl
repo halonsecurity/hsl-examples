@@ -7,9 +7,6 @@ function sendlog($logdata = []) {
 	global $saslusername, $saslmechanism, $saslstate, $saslresponse; // auth
 
 	$time = time();
-	$receivedtime = str_replace(".", "", $time);
-	if (strlen($receivedtime) > 13) $receivedtime = substr($receivedtime, 0, 13);
-
 	$logdata += [
 		"serial" => serial(),
 		"hostname" => gethostname(),
@@ -25,7 +22,7 @@ function sendlog($logdata = []) {
 		"saslmechanism" => $saslmechanism,
 		"saslstate" => $saslstate,
 		"saslresponse" => $saslresponse,
-		"receivedtime" => $receivedtime
+		"receivedtime" => round($time * 1000)
 	];
 
 	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype;
