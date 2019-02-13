@@ -28,8 +28,8 @@ function sendlog($logdata = []) {
 		"recipient" => $recipient,
 		"recipientlocalpart" => $recipientlocalpart,
 		"recipientdomain" => $recipientdomain,
-		"recipientparams" => $recipientparams
-		"transportid" => $transportid
+		"recipientparams" => $recipientparams,
+		"transportid" => $transportid,
 		"receivedtime" => round($time * 1000)
 	];
 
