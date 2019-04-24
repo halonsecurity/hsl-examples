@@ -15,8 +15,10 @@ class Radius
 		$authenticator = random_bytes(16);
 
 		$attributes = "";
-		if ($clientip)
-			$attributes .= pack("CCa*", 0x0e, 2 + 4, inet_pton($clientip));
+		if ($clientip) {
+			$packedip = inet_pton($clientip);
+			$attributes .= pack("CCa*", strlen($packedip) == 4 ? 0x0e : 0x62, 2 + strlen($packedip), $packedip);
+		}
 		$attributes .= pack("CCa*", 0x01, 2 + strlen($username), $username);
 		$attributes .= pack("CCa*", 0x02, 2 + 16, $this->__encrypt_pass($this->secret, $authenticator, $password));
 
