@@ -35,7 +35,7 @@ function sendlog($logdata = []) {
 		"receivedtime" => round($time * 1000)
 	];
 
-	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$messageid.":".$actionid;
+	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$transaction["id"].":".$actionid;
 	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));
 }
 
