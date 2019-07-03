@@ -1,24 +1,23 @@
-function SRS_forward($sender, $alias, $opts = [])
+function SRS_forward($localpart, $domain, $opts = [])
 {
 	$secret = $opts["secret"] ?? "";
 	$hashlen = $opts["hashlen"] ?? 4;
 
-	$part = explode("@", $sender);
 	$days = floor(time() / 86400);
 	$base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 	$time = $base32[floor($days / 32) & 31].$base32[$days & 31];
-	$key = base64_encode(pack("H*", hmac_sha1($secret, strtolower($time.$part[1].$part[0]))));    
-	return "SRS0=".$key[0:$hashlen]."=$time=".$part[1]."=".$part[0]."@$alias";
+	$key = base64_encode(pack("H*", hmac_sha1($secret, strtolower($time.$domain.$localpart))));    
+	return "SRS0=".$key[0:$hashlen]."=$time=".$domain."=".$localpart;
 }
 
-function SRS_reverse($address, $opts = [])
+function SRS_reverse($localpart, $opts = [])
 {
 	$secret = $opts["secret"] ?? "";
 	$hashlen = $opts["hashlen"] ?? 4;
 	$maxage = $opts["maxage"] ?? 21;
 
-	if (strtolower($address[0:5]) != "srs0=") return "";
-	$part = explode("=", explode("@", $address)[0]);
+	if (strtolower($localpart[0:5]) != "srs0=") return "";
+	$part = explode("=", $localpart);
 	if (count($part) < 5) return;
 
 	$key = base64_encode(pack("H*", hmac_sha1($secret, strtolower($part[2].$part[3].implode("=", $part[4:])))));
