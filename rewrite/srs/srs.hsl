@@ -18,9 +18,9 @@ function SRS_reverse($localpart, $opts = [])
 
 	if (strtolower($localpart[0:5]) != "srs0=") return;
 	$part = explode("=", $localpart, 5);
-	if (count($part) < 5) return;
+	if (count($part) != 5) return;
 
-	$key = base64_encode(pack("H*", hmac_sha1($secret, strtolower($part[2].$part[3].implode("=", $part[4])))));
+	$key = base64_encode(pack("H*", hmac_sha1($secret, strtolower($part[2].$part[3].$part[4]))));
 	if (strtolower($key[0:$hashlen]) != strtolower($part[1])) return;
 
 	if (strlen($part[2]) != 2) return;
@@ -38,5 +38,5 @@ function SRS_reverse($localpart, $opts = [])
 	if ($now < $days) $now += (32 ** 2);
 	if ($now > $days + $maxage) return;
 
-	return ["localpart" => implode("=", $part[4]), "domain" => $part[3]];
+	return ["localpart" => $part[4], "domain" => $part[3]];
 }
