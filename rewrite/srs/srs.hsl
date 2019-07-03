@@ -38,5 +38,5 @@ function SRS_reverse($localpart, $opts = [])
 	if ($now < $days) $now += (32 ** 2);
 	if ($now > $days + $maxage) return;
 
-	return implode("=", $part[4:])."@".$part[3];
+	return ["localpart" => implode("=", $part[4:]), "domain" => $part[3]];
 }
