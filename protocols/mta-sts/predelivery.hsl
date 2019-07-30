@@ -11,7 +11,6 @@ if (is_array($mtasts))
 		"tls" => "require_verify",
 	]);
 */
-	} else {
-//		echo "MTA-STS: $recipientdomain: No STS policy";
-	}
+} else {
+//	echo "MTA-STS: $recipientdomain: No STS policy";
 }
