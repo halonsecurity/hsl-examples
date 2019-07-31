@@ -1,14 +1,59 @@
-$cacheSize = 10000;
+function mta_sts($policydomain)
+{
+	$cache = CacheKVP("mta-sts");
+	$cached = $cache->get($policydomain);
+	
+	// Always fetch the DNS TXT record, to determine if we should extend the cached policy
+	$dnstxt = mta_sts_fetch_dnstxt($policydomain);
 
-function mta_sts_fetch_new_policy($policydomain)
+	// Cached policy is missing, or needs update
+	if ($dnstxt and $cached["dnstxt"] != $dnstxt)
+	{
+		// Fetch HTTPS policy (at most every 5 minutes)
+		$newpolicy = cache [ "ttl" => 300, "size" => 2048 ] mta_sts_fetch_https($policydomain);
+		if ($newpolicy)
+		{
+			$newpolicy["dnstxt"] = $dnstxt;
+			$cache->set($policydomain, $newpolicy, $newpolicy["max_age"]);
+			return $newpolicy;
+		}
+	}
+
+	if ($cached)
+	{
+		// If cached policy matches DNS TXT, extend cache to now+max_age
+		// XXX we should do proactively refresh policies daily, before they expire
+		if ($cached["dnstxt"] == $dnstxt)
+			$cache->set($policydomain, $cached, $cached["max_age"]);
+		return $cached;
+	}
+
+	return false;
+}
+
+function mta_sts_fetch_dnstxt($policydomain) {
+	$dnstxt = dns_query("_mta-sts.$policydomain", ["type" => "txt"]);
+	if (!is_array($dnstxt["result"]))
+		return false;
+	// The TXT record MUST begin with the version field
+	$ststxts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $dnstxt["result"]);
+	if (count($ststxts) != 1)
+		return false;
+	// XXX use taglist() to extract ID?
+	return $ststxts[0];
+}
+
+function mta_sts_fetch_https($policydomain)
 {
 	$res = http("https://mta-sts.$policydomain/.well-known/mta-sts.txt", [
+		"redirects" => 0, // HTTP 3xx redirects MUST NOT be followed
 		"ssl_verify_host" => true,
 		"ssl_default_ca" => true,
 		"connect_timeout" => 5,
 		"timeout" => 5,
 		"max_file_size" => 64 * 1024,
-	]); 
+	]);
+	// XXX senders SHOULD validate that the media type is "text/plain"
 	if (!is_string($res))
 		return;
 	$policy = mta_sts_parse_policy($res);
@@ -39,60 +84,40 @@ function mta_sts_parse_policy($policy)
 		[]);
 }
 
-function mta_sts_cache($policydomain, $value)
+class CacheKVP
 {
-	return $value;
-}
+	private $size = 10000;
+	private $name = "";
 
-function mta_sts_cache_policy($policydomain, $dnstxt, $policy)
-{
-	global $cacheSize;
-	cache [
-			"argv_filter" => [1],
-			"size" => $cacheSize,
-			"ttl" => $policy["max_age"],
-			"force" => true, /* renew policy */
-		] mta_sts_cache($policydomain, [$dnstxt, $policy]); 
-}
-
-function mta_sts_fetch_cached_policy($policydomain)
-{
-	global $cacheSize;
-	return cache [
-			"argv_filter" => [1],
-				"size" => $cacheSize,
-				"ttl" => 0, /* do no cache */
-			] mta_sts_cache($policydomain, [/* cache miss value */]);
-}
-
-function mta_sts($policydomain)
-{
-	$dnstxt = dnstxt("_mta-sts.$policydomain");
-	$currenttxt = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $dnstxt);
-	if (count($currenttxt) != 1)
-		$currenttxt = [];
-
-	[$cachedtxt, $cachedpolicy] = mta_sts_fetch_cached_policy($policydomain);
-
-	// fetch-first or update
-	if ($currenttxt and $cachedtxt != $currenttxt)
+	constructor($name, $size = 10000)
 	{
-		$currentpolicy = cache [ "ttl" => 300, "size" => 2048 ] mta_sts_fetch_new_policy($policydomain);
-		if ($currentpolicy)
-		{
-			mta_sts_cache_policy($policydomain, $currenttxt, $currentpolicy);
-			return $currentpolicy;
-		}
+		$this->name = $name;
+		$this->size = $size;
 	}
 
-	// use old cache
-	if ($cachedtxt)
+	function get($key)
 	{
-		// extend cache
-		if ($cachedtxt == $currenttxt)
-			mta_sts_cache_policy($policydomain, $cachedtxt, $cachedpolicy);
-		return $cachedpolicy;
+		return cache [
+			"namespace" => $this->name,
+			"size" => $this->size,
+			"argv_filter" => [1],
+			"ttl" => 0, /* do no set cache, only get */
+		] CacheKVP::store($key, none);
 	}
 
-	return false;
+	function set($key, $value, $ttl)
+	{
+		cache [
+			"namespace" => $this->name,
+			"size" => $this->size,
+			"argv_filter" => [1],
+			"ttl" => $ttl,
+			"force" => true, /* set cache */
+		] CacheKVP::store($key, $value); 
+	}
+
+	private static function store($key, $value)
+	{
+		return $value;
+	}
 }
