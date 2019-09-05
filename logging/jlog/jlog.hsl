@@ -28,27 +28,27 @@ function jlogger($message)
 					$ctx = FFI::attach($jlog_new($jlog_path), $jlog_ctx_close);
 					if (FFI::number($jlog_ctx_init($ctx)) != 0)
 					{
-						echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+						echo "jlogger: " . FFI::string($jlog_ctx_err_string($ctx));
 						return none;
 					}
 					$jlog_ctx_add_subscriber($ctx, $jlog_subscriber, 0);
 					$ctx = FFI::attach($jlog_new($jlog_path), $jlog_ctx_close);
 					if (FFI::number($jlog_ctx_open_writer($ctx)) != 0)
 					{
-						echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+						echo "jlogger: " . FFI::string($jlog_ctx_err_string($ctx));
 						return none;
 					}
 				}
 				else
 				{
-					echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+					echo "jlogger: " . FFI::string($jlog_ctx_err_string($ctx));
 					return none;
 				}
 			}
 			$writefunc = function ($message) closure ($ctx, $jlog_ctx_write, $jlog_ctx_err_string) {
 				if (FFI::number($jlog_ctx_write($ctx, $message, length($message))) != 0)
 				{
-					echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+					echo "jlogger: " . FFI::string($jlog_ctx_err_string($ctx));
 					return false;
 				}
 				return true;
