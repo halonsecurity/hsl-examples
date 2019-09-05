@@ -22,7 +22,7 @@ function sendlog() {
 		"recipientlocalpart" => $recipientlocalpart,
 		"recipientdomain" => $recipientdomain,
 		"transportid" => $transportid,
-		"finishedtime" => round($finishedtime * 1000)
+		"finishedtime" => round($time * 1000)
 	];
 
 	$path = "/".$indexname."-".strftime($indexrotate, $receivedtime)."/".$indextype."/".$messageid.":".$actionid."/_update";
