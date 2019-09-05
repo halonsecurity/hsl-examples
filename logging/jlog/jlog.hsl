@@ -1,0 +1,59 @@
+function jlogger($message)
+{
+	return memory_update("jlogger", $message, function ($k, $writefunc, $message) {
+ 		if ($writefunc == none)
+		{
+			$jlog_path = "/var/log/halon-jlog";
+			$jlog_subscriber = "subscriber1";
+
+			$libjlog = FFI("/usr/local/lib/libjlog.so.2");
+
+			$jlog_new = $libjlog->func("jlog_new", [ FFI::type("pointer") ], FFI::type("pointer"));
+			$jlog_ctx_close = $libjlog->func("jlog_ctx_close", [ FFI::type("pointer") ], FFI::type("sint32"));
+
+			$jlog_ctx_init = $libjlog->func("jlog_ctx_init", [ FFI::type("pointer") ], FFI::type("sint32"));
+			$jlog_ctx_add_subscriber = $libjlog->func("jlog_ctx_add_subscriber", [ FFI::type("pointer"), FFI::type("pointer"), FFI::type("sint32") ], FFI::type("sint32"));
+
+			$jlog_ctx_open_writer = $libjlog->func("jlog_ctx_open_writer", [ FFI::type("pointer") ], FFI::type("sint32"));
+			$jlog_ctx_write = $libjlog->func("jlog_ctx_write", [ FFI::type("pointer"), FFI::type("pointer"), FFI::type("sint32") ], FFI::type("sint32"));
+
+			$jlog_ctx_err = $libjlog->func("jlog_ctx_err", [ FFI::type("pointer") ], FFI::type("sint32"));
+			$jlog_ctx_err_string = $libjlog->func("jlog_ctx_err_string", [ FFI::type("pointer") ], FFI::type("pointer"));
+
+			$ctx = FFI::attach($jlog_new($jlog_path), $jlog_ctx_close);
+			if (FFI::number($jlog_ctx_open_writer($ctx)) != 0)
+			{
+				if (FFI::number($jlog_ctx_err($ctx)) == 3)
+				{
+					$ctx = FFI::attach($jlog_new($jlog_path), $jlog_ctx_close);
+					if (FFI::number($jlog_ctx_init($ctx)) != 0)
+					{
+						echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+						return none;
+					}
+					$jlog_ctx_add_subscriber($ctx, $jlog_subscriber, 0);
+					$ctx = FFI::attach($jlog_new($jlog_path), $jlog_ctx_close);
+					if (FFI::number($jlog_ctx_open_writer($ctx)) != 0)
+					{
+						echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+						return none;
+					}
+				}
+				else
+				{
+					echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+					return none;
+				}
+			}
+			$writefunc = function ($message) closure ($ctx, $jlog_ctx_write, $jlog_ctx_err_string) {
+				if (FFI::number($jlog_ctx_write($ctx, $message, length($message))) != 0)
+				{
+					echo "jlogger: " .  FFI::string($jlog_ctx_err_string($ctx));
+					return false;
+				}
+				return true;
+			};
+		}
+		return $writefunc($message) ? $writefunc : none;
+	}, none) != none;
+}
