@@ -9,5 +9,5 @@ $mail->addHeader("Authentication-Results", AuthenticationResults()
 				->DKIM()
 				->DMARC()
 				->toString()
-		));
+		);
 ```
