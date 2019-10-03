@@ -79,12 +79,12 @@ class Memcached
 		$offset = 0;
 		while ($offset < strlen($data))
 		{
-			$lineEnd = strpos($data, "\r\n", $offset) - $offset;
-			$line = substr($data, $offset, $lineEnd);
+			$lineEnd = str_find($data, "\r\n", $offset) - $offset;
+			$line = str_slice($data, $offset, $lineEnd);
 			[$type, $key, $flags, $length] = explode(" ", $line);
 			if ($type != "VALUE") break;
 			$offset += $lineEnd + 2;
-			$values[] = substr($data, $offset, $length);
+			$values[] = str_slice($data, $offset, $length);
 			$offset += number($length) + 2;
 		}
 		return $values;

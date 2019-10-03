@@ -9,7 +9,7 @@ function urlencode($string)
 	while ($i < $len)
 	{
 		$c = $string[$i];
-		if (strpos($ok, $c) >= 0)
+		if (str_find($ok, $c) >= 0)
 			$result .= $c;
 		else
 			$result .= "%".unpack("H2", $c)[0];

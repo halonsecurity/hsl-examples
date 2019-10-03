@@ -22,7 +22,7 @@ class Radius
 		$attributes .= pack("CCa*", 0x01, 2 + strlen($username), $username);
 		$attributes .= pack("CCa*", 0x02, 2 + 16, $this->__encrypt_pass($this->secret, $authenticator, $password));
 
-		$requestid = rand(0, 255);
+		$requestid = random_number(0, 255);
 		$data = 
 			pack("CCna*a*",
 				1,

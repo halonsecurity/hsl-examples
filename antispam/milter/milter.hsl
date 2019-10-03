@@ -12,7 +12,7 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 
 	milter_send($socket, "C",
 			"\x00".
-			(strpos($senderip, ":") != -1 ? "6" : "4").
+			(str_find($senderip, ":") != -1 ? "6" : "4").
 			pack("n", $senderport).
 			$senderip."\x00");
 	if (!milter_read($socket, milter_expect_c)) return;

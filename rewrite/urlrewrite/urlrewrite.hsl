@@ -17,9 +17,9 @@ foreach (
 	{
 		$urldata = pcre_replace(''/<a[^>]*?(href\s*=\s*((?<quote>['"])(?<href>.+?)(?&quote)|(?<href2>[^\s>]+)))[^>]*?>/i'', function ($f) closure ($rewriteurl) {
 				$url = $f[4] ?: $f[5];
-				if (substr($url, 0, strlen($rewriteurl)) == $rewriteurl)
+				if (str_slice($url, 0, strlen($rewriteurl)) == $rewriteurl)
 					return $f[0];
-				if (($scheme = pcre_match("^([a-z]+):", strtolower($url))) and $scheme[1] != "http" and $scheme[1] != "https")
+				if (($scheme = pcre_match("^([a-z]+):", str_lower($url))) and $scheme[1] != "http" and $scheme[1] != "https")
 					return $f[0];
 				return str_replace($f[1], ''href="''.$rewriteurl.''?url=''.urlencode($url).''"'', $f[0]);
 		}, $data);
@@ -28,7 +28,7 @@ foreach (
 	{
 		// John Gruber's URL Regular Expression http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
 		$urldata = pcre_replace(''/\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))/i'', function ($f) closure ($rewriteurl) {
-				if (substr($f[0], 0, strlen($rewriteurl)) == $rewriteurl)
+				if (str_slice($f[0], 0, strlen($rewriteurl)) == $rewriteurl)
 					return $f[0];
 				return $rewriteurl."?url=".urlencode($f[0]);
 		}, $data);
