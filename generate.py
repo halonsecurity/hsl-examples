@@ -10,7 +10,7 @@ def fix_path(n):
 def get_config_line(filepath):
     name = map(fix_path, filepath.replace('.hsl', '').split(os.path.sep))
     code = base64.b64encode(open(filepath, 'r').read())
-    return 'file__examples' + '.'.join(name) + '="|text/x-hsl|' + code + '"'
+    return 'file__examples' + '/'.join(name) + '="|text/x-hsl|' + code + '|"'
 
 def find_hsl_files(directory):
     f = []
