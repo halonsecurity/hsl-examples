@@ -132,9 +132,9 @@ class SMTPClient
 				return [-1, ["Invalid code: $line"]]; // invalid code
 	
 			if ($line[3] == " ")
-				return [$code, $lines + [trim($line[4:])]];
+				return [$code, $lines + [str_strip($line[4:])]];
 			else if ($line[3] == "-")
-				$lines[] = trim($line[4:]);
+				$lines[] = str_strip($line[4:]);
 			else
 				return [-1, ["Invalid reply: $line"]]; // invalid reply
 		}

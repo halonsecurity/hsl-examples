@@ -54,7 +54,7 @@ class Redis
 
 		if ($char == "*")
 		{
-			$size = number(trim($this->__fgets()));
+			$size = number(str_strip($this->__fgets()));
 
 			if ($size == -1) return;
 
@@ -122,17 +122,17 @@ class Redis
 
 	private function __fetch_integer()
 	{
-		return number(trim($this->socket->recv(8192)));
+		return number(str_strip($this->socket->recv(8192)));
 	}
 
 	private function __fetch_inline()
 	{
-		return trim($this->socket->recv(8192));
+		return str_strip($this->socket->recv(8192));
 	}
 
 	private function __fetch_bulk()
 	{
-		$size = number(trim($this->__fgets()));
+		$size = number(str_strip($this->__fgets()));
 
 		if ($size == -1) return;
 

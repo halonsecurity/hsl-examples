@@ -7,7 +7,7 @@ function dsn_parse($mail)
     $dsn = [];
     $state = "G";
     $buffer = [];
-    foreach ([...array_map(trim, str_split($data, "\n")), ""] as $value)
+    foreach ([...array_map(str_strip, str_split($data, "\n")), ""] as $value)
     {
         if ($value == "")
         {
@@ -32,7 +32,7 @@ function dsn_parse($mail)
         }
         else
         {
-            [$k, $v] = array_map(trim, str_split($value, ":", 2));
+            [$k, $v] = array_map(str_strip, str_split($value, ":", 2));
             $buffer[str_lower($k)] = $v;
         }
     }

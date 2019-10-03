@@ -75,7 +75,7 @@ function mta_sts_parse_policy($policy)
 		array_map(
 			function ($v) {
 				[$key, $value] = explode(":", $v, 2);
-				return [trim($key), trim($value)];
+				return [str_strip($key), str_strip($value)];
 			},
 			array_filter(function ($v) {
 				return strpos($v, ":") != -1;

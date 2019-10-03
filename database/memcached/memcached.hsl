@@ -94,7 +94,7 @@ class Memcached
 	{
 		if (!$this->socket->send("delete $key\r\n")) return;
 		if (!$resp = $this->socket->recv(8192)) return;
-		$resp = trim($resp);
+		$resp = str_strip($resp);
 		return $resp == "DELETED";
 	}
 
@@ -103,7 +103,7 @@ class Memcached
 		$bytes = strlen($value);
 		if (!$this->socket->send("$command $key $flags $exptime $bytes\r\n$value\r\n")) return;
 		if (!$resp = $this->socket->recv(8192)) return;
-		$resp = trim($resp);
+		$resp = str_strip($resp);
 		return $resp == "STORED";
 	}
 }

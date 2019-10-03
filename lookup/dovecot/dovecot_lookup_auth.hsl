@@ -29,7 +29,7 @@ function dovecot_lookup_auth($opts, $username, $password)
 	while (true)
 	{
 		if (!$line = $getline($socket)) return -1;
-		[$a, $b] = explode("\t", trim($line));
+		[$a, $b] = explode("\t", str_strip($line));
 		if ($a == "VERSION" and $b == "1") $version = true;
 		if ($a == "MECH" and $b == "PLAIN") $plain = true;
 		if ($a == "MECH" and $b == "LOGIN") $login = true;
@@ -51,7 +51,7 @@ function dovecot_lookup_auth($opts, $username, $password)
 		if (!$socket->send(implode("\t", $auth)."\n")) return -1;
 
 		if (!$line = $getline($socket)) return -1;
-		[$a, $b, $c] = explode("\t", trim($line));
+		[$a, $b, $c] = explode("\t", str_strip($line));
 		if ($a != "CONT" and $b != "1") return -1;
 
 		if (!$socket->send(implode("\t", ["CONT", "1", base64_encode($username . " " . hmac_md5($password, base64_decode($c)))])."\n")) return -1;
@@ -77,7 +77,7 @@ function dovecot_lookup_auth($opts, $username, $password)
 		if (!$socket->send(implode("\t", $auth)."\n")) return -1;
 
 		if (!$line = $getline($socket)) return -1;
-		[$a, $b] = explode("\t", trim($line));
+		[$a, $b] = explode("\t", str_strip($line));
 		if ($a != "CONT" and $b != "1") return -1;
 
 		if (!$socket->send(implode("\t", ["CONT", "1", base64_encode($password)])."\n")) return -1;
@@ -85,7 +85,7 @@ function dovecot_lookup_auth($opts, $username, $password)
 		return -1;
 
 	if (!$line = $getline($socket)) return -1;
-	[$a, $b] = explode("\t", trim($line));
+	[$a, $b] = explode("\t", str_strip($line));
 	if ($a == "OK" and $b == "1") return 1;
 	if ($a == "FAIL" and $b == "1") return 0;
 	return -1;
