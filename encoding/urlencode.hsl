@@ -5,7 +5,7 @@ function urlencode($string)
 	$ok = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~";
 	$result = "";
 	$i = 0;
-	$len = strlen($string);
+	$len = length($string);
 	while ($i < $len)
 	{
 		$c = $string[$i];

@@ -21,7 +21,7 @@ function httppost($opts, $fp)
 			])."\r\n\r\n";
 	$postamble = "\r\n--$boundary--\r\n";
 
-	$length += strlen($preamble) + strlen($postamble);
+	$length += length($preamble) + length($postamble);
 
 	if (!$socket->send(implode("\r\n", [
 			"POST $uri HTTP/1.0",

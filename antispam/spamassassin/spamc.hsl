@@ -135,7 +135,7 @@ class SPAMC
 		$s = $this->mail->seek(0, "SEEK_END");
 		$this->mail->seek(0, "SEEK_SET");
 		if ($this->sender)
-			$s += strlen("Return-Path: <".$this->sender.">\r\n");
+			$s += length("Return-Path: <".$this->sender.">\r\n");
 		return $s;
 	}
 }

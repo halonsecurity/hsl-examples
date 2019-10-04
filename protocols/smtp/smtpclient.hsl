@@ -124,7 +124,7 @@ class SMTPClient
 			if (!is_string($line))
 				return; // disconnect
 		
-			if (strlen($line) < 4)
+			if (length($line) < 4)
 				return [-1, ["Too short reply: $line"]]; // too short reply
 			
 			$code = number($line[0:3]);

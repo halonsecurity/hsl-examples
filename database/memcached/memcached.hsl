@@ -77,7 +77,7 @@ class Memcached
 		}
 		$values = [];
 		$offset = 0;
-		while ($offset < strlen($data))
+		while ($offset < length($data))
 		{
 			$lineEnd = str_find($data, "\r\n", $offset) - $offset;
 			$line = str_slice($data, $offset, $lineEnd);
@@ -100,7 +100,7 @@ class Memcached
 
 	private function __store($command, $key, $flags, $exptime, $value)
 	{
-		$bytes = strlen($value);
+		$bytes = length($value);
 		if (!$this->socket->send("$command $key $flags $exptime $bytes\r\n$value\r\n")) return;
 		if (!$resp = $this->socket->recv(8192)) return;
 		$resp = str_strip($resp);

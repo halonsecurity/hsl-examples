@@ -96,7 +96,7 @@ class MySQL
 		if ($numcols and !([$columns] = $this->getResultsetColumns($numcols))) return;
 
 		$args = "";
-		if (count($params) > 0)
+		if (length($params) > 0)
 		{
 			$bitmap = [];
 			$types = "";
@@ -112,7 +112,7 @@ class MySQL
 				$types .= "\x0f\x00";
 
 				if ($a != none)
-					$values .= "\xfc".pack("va*", strlen($a), $a);
+					$values .= "\xfc".pack("va*", length($a), $a);
 			}
 
 			$args = pack("C*", ...$bitmap).pack("Ca*a*", 0x1, $types, $values);
@@ -158,7 +158,7 @@ class MySQL
 			if (($payload = $this->recv()) == none) return;
 			if ($payload == "") continue;
 
-			if (ord($payload[0]) == 0xfe and strlen($payload) < 9)
+			if (ord($payload[0]) == 0xfe and length($payload) < 9)
 			{
 				// make sure it's an EOF
 				if ($this->capabilities & 0x200)
@@ -323,7 +323,7 @@ class MySQL
 			if (($payload = $this->recv()) == none) return;
 			if ($payload == "") continue;
 
-			if (ord($payload[0]) == 0xfe and strlen($payload) < 9)
+			if (ord($payload[0]) == 0xfe and length($payload) < 9)
 			{
 				// make sure it's an EOF
 				if ($this->capabilities & 0x200)
@@ -419,7 +419,7 @@ class MySQL
 				if ($chunk == none)
 					return none;
 				$payload .= $chunk;
-				$len -= strlen($chunk);
+				$len -= length($chunk);
 				$chunk = "";
 			}
 
@@ -442,7 +442,7 @@ class MySQL
 
 	private function send($seqId, $pkt)
 	{
-		$len = strlen($pkt);
+		$len = length($pkt);
 		$l = $this->socket->send(pack("vCC", ($len & 0xffff), $len >> 16, $seqId).$pkt);
 		return ($l == $len + 4);
 	}

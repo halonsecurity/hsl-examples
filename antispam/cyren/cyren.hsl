@@ -18,7 +18,7 @@ function ctasd($senderip, $sender, $mailpath)
     $request[] = "Accept-Language: en-us";
     $request[] = "Accept: */*";
     $request[] = "Host: 127.0.0.1";
-    $request[] = "Content-Length: " + strlen($body);
+    $request[] = "Content-Length: " + length($body);
     $request[] = "";
     $request[] = $body;
     $request = implode("\r\n", $request);
@@ -69,7 +69,7 @@ function ctipd($senderip)
     $request[] = "Accept-Language: en-us";
     $request[] = "Accept: */*";
     $request[] = "Host: 127.0.0.1";
-    $request[] = "Content-Length: " + strlen($body);
+    $request[] = "Content-Length: " + length($body);
     $request[] = "";
     $request[] = $body;
     $request = implode("\r\n", $request);

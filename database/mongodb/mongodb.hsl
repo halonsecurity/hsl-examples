@@ -50,7 +50,7 @@ class MongoDB
 				$numberToReturn,
 				$query,
 				$returnFieldsSelector);
-		$this->socket->send(pack("V", 4 + strlen($data)) . $data);
+		$this->socket->send(pack("V", 4 + length($data)) . $data);
 
 		$result = [];
 		forever
@@ -67,7 +67,7 @@ class MongoDB
 				if ($chunk == none)
 					return none;
 				$data .= $chunk;
-				$len -= strlen($chunk);
+				$len -= length($chunk);
 				$chunk = "";
 			}
 
@@ -94,7 +94,7 @@ class MongoDB
 			] = unpack("VVVVV", $data, $i);
 			$i += 20;
 
-			while ($i < strlen($data))
+			while ($i < length($data))
 			{
 				$l = unpack("V", $data, $i)[0];
 				$result[] = $this->bson_decode($data, $i);
@@ -124,7 +124,7 @@ class MongoDB
 					$limit,
 					$cursorID1,
 					$cursorID2);
-			$this->socket->send(pack("V", 4 + strlen($data)) . $data);
+			$this->socket->send(pack("V", 4 + length($data)) . $data);
 		}
 
 		return $result;
@@ -151,7 +151,7 @@ class MongoDB
 
 			if ($i == $l)
 			{
-				if (count($stack) == 1)
+				if (length($stack) == 1)
 					return $output;
 				$last = $stack[-1:][0];
 				$stack = $stack[:-1];
@@ -181,7 +181,7 @@ class MongoDB
 				}
 
 				[$key] = unpack("Z*", $data, $i);
-				$i += strlen($key) + 1;
+				$i += length($key) + 1;
 
 				switch ($type)
 				{
@@ -230,7 +230,7 @@ class MongoDB
 						break;
 					case 0x0b:
 						[$pattern, $options] = unpack("Z*Z*", $data, $i);
-						$i += strlen($pattern) + strlen($options) + 2;
+						$i += length($pattern) + length($options) + 2;
 						echo "unsupported BSON type (Regular expression)";
 						break;
 					case 0x0c:
@@ -292,29 +292,29 @@ class MongoDB
 		{
 			["k" => $k, "d" => $d, "i" => $i, "o" => $o] = $stack[-1:][0];
 
-			if ($i == count($k))
+			if ($i == length($k))
 			{
-				if (count($stack) == 1)
-					return pack("Va*x", 4 + strlen($stack[0]["o"]) + 1, $stack[0]["o"]);
+				if (length($stack) == 1)
+					return pack("Va*x", 4 + length($stack[0]["o"]) + 1, $stack[0]["o"]);
 
 				$last = $stack[-1:][0];
 				$stack = $stack[:-1];
 				$head = $stack[-1:][0];
-				$head["o"] .= pack("Va*x", 4 + strlen($last["o"]) + 1, $last["o"]);
+				$head["o"] .= pack("Va*x", 4 + length($last["o"]) + 1, $last["o"]);
 				$stack = $stack[:-1];
 				$stack[] = $head;
 				continue;
 			}
 
 			$break = false;
-			while (!$break and $i < count($k))
+			while (!$break and $i < length($k))
 			{
 				$v = $d[$k[$i]];
 
 				if (is_array($v))
 				{
 					$keys = array_keys($v);
-					$type = (count($v) == 0 or is_number($keys[0])) ? 0x04 : 0x03;
+					$type = (length($v) == 0 or is_number($keys[0])) ? 0x04 : 0x03;
 					$stack = $stack[:-1];
 					$stack[] = ["k" => $k, "d" => $d, "i" => $i + 1, "o" => $o . pack("CZ*", $type, $k[$i]) ];
 					$stack[] = ["k" => $keys, "d" => $v, "i" => 0, "o" => ""];
@@ -327,7 +327,7 @@ class MongoDB
 				}
 				else if (is_string($v))
 				{
-					$o .= pack("CZ*VZ*", 0x02, $k[$i], strlen($v) + 1, $v);
+					$o .= pack("CZ*VZ*", 0x02, $k[$i], length($v) + 1, $v);
 				}
 				else if ($v == none)
 				{

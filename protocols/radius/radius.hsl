@@ -17,9 +17,9 @@ class Radius
 		$attributes = "";
 		if ($clientip) {
 			$packedip = inet_pton($clientip);
-			$attributes .= pack("CCa*", strlen($packedip) == 4 ? 0x0e : 0x62, 2 + strlen($packedip), $packedip);
+			$attributes .= pack("CCa*", length($packedip) == 4 ? 0x0e : 0x62, 2 + length($packedip), $packedip);
 		}
-		$attributes .= pack("CCa*", 0x01, 2 + strlen($username), $username);
+		$attributes .= pack("CCa*", 0x01, 2 + length($username), $username);
 		$attributes .= pack("CCa*", 0x02, 2 + 16, $this->__encrypt_pass($this->secret, $authenticator, $password));
 
 		$requestid = random_number(0, 255);
@@ -27,7 +27,7 @@ class Radius
 			pack("CCna*a*",
 				1,
 				$requestid,
-				20 + strlen($attributes),
+				20 + length($attributes),
 				$authenticator,
 				$attributes,
 			);
@@ -47,7 +47,7 @@ class Radius
 		if ($attributes)
 		{
 			$offset = 0;
-			while ($offset < strlen($attributes))
+			while ($offset < length($attributes))
 			{
 				[$id, $len] = unpack("CC", $attributes, $offset);
 				if ($id == 26)

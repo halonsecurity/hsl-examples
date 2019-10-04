@@ -55,7 +55,7 @@ function milter_v2($opts, $senderip, $senderport, $senderhelo, $sender, $recipie
 
 function milter_send($socket, $cmd, $data = "")
 {
-	return $socket->send(pack("N", 1 + strlen($data)).$cmd.$data);
+	return $socket->send(pack("N", 1 + length($data)).$cmd.$data);
 }
 
 function milter_read($socket, $parse)

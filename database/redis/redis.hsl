@@ -110,7 +110,7 @@ class Redis
 			if (!$resp = $this->socket->recv(1))
 				break;
 
-			$b += strlen($resp);
+			$b += length($resp);
 			$data .= $resp;
 
 			if ($data[-2:] == "\r\n")
@@ -142,7 +142,7 @@ class Redis
 		{
 			if (!$resp = $this->socket->recv( ($size - $b < 8192) ? ($size - $b) : 8192 )) return;
 
-			$b += strlen($resp);
+			$b += length($resp);
 			$data .= $resp;
 		}
 

@@ -1,7 +1,7 @@
 function levenshtein($s, $t)
 {
-	$m = strlen($s);
-	$n = strlen($t);
+	$m = length($s);
+	$n = length($t);
 	
 	$i = 0;
 	while ($i <= $m)

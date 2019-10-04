@@ -55,7 +55,7 @@ class rspamd
 		$b = 0;
 		while ($str = $fp->read(($maxMessageSize - $b < 8192) ? ($maxMessageSize - $b) : 8192)) {
 			if (!$socket->send($str)) return;
-			$b += strlen($str);
+			$b += length($str);
 			if ($b >= $maxMessageSize)
 				break;
 		}

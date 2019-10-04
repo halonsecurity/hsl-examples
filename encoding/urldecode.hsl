@@ -4,7 +4,7 @@ function urldecode($string)
 {
 	$result = "";
 	$i = 0;
-	$len = strlen($string);
+	$len = length($string);
 	while ($i < $len)
 	{
 		$c = $string[$i];

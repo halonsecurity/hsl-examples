@@ -18,9 +18,9 @@ class FileData
 	{
 		if (!isset($this->content)) return;
 		if ($this->p < 0) return "";
-		if ($this->p >= strlen($this->content)) return "";
+		if ($this->p >= length($this->content)) return "";
 		$data = $this->content[$this->p:$this->p + $length];
-		$this->p += strlen($data);
+		$this->p += length($data);
 		return $data;
 	}
 
@@ -36,7 +36,7 @@ class FileData
 				$this->p = $this->p + $offset;
 				break;
 			case "SEEK_END":
-				$this->p = strlen($this->content) + $offset < 0 ? -1 : strlen($this->content) + $offset;
+				$this->p = length($this->content) + $offset < 0 ? -1 : length($this->content) + $offset;
 				break;
 		}
 		return $this->p;

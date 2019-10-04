@@ -37,7 +37,7 @@ function mta_sts_fetch_dnstxt($policydomain) {
 		return false;
 	// The TXT record MUST begin with the version field
 	$ststxts = array_filter(function ($r) { return $r[0:8] == "v=STSv1;"; }, $dnstxt["result"]);
-	if (count($ststxts) != 1)
+	if (length($ststxts) != 1)
 		return false;
 	// XXX use taglist() to extract ID?
 	return $ststxts[0];

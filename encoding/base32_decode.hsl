@@ -7,7 +7,7 @@ function base32_decode($input)
 	$result = "";
 
 	$i = 0;
-	$l = strlen($input);
+	$l = length($input);
 	while ($i < $l)
 	{
 		if ($input[$i] == "=")

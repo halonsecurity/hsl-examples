@@ -12,13 +12,13 @@ function geoip_object()
 function geoip($senderip)
 {
 	$ip = unpack("N*", inet_pton($senderip));
-	if (count($ip) != 1)
+	if (length($ip) != 1)
 		return;
 	$ip = $ip[0];
 
 	$lst = cache [] geoip_object();
 	$min = 0;
-	$max = count($lst);
+	$max = length($lst);
 	$log = log($max, 2);
 	$i = 0;
 	while ($i <= $log)

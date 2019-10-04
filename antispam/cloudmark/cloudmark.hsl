@@ -32,7 +32,7 @@ function authoritypost($opts, $headers, $fp)
 
 	$postamble = "\r\n--$boundary--\r\n";
 
-	$length += strlen($preamble) + strlen($rfc822) + strlen($postamble);
+	$length += length($preamble) + length($rfc822) + length($postamble);
 
 	if (!$socket->send(implode("\r\n", [
 					"POST $uri HTTP/1.0",
@@ -49,7 +49,7 @@ function authoritypost($opts, $headers, $fp)
 	$b = 0;
 	while ($str = $fp->read(($maxMessageSize - $b < 8192) ? ($maxMessageSize - $b) : 8192)) {
 		if (!$socket->send($str)) return;
-		$b += strlen($str);
+		$b += length($str);
 		if ($b >= $maxMessageSize)
 			break;
 	}

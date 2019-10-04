@@ -24,7 +24,7 @@ class PostgreSQL
 		if (!$this->socket->connect($this->address, $this->port)) return;
 
 		$l = pack("Z*Z*Z*Z*x", "user", $this->user, "database", $this->database);
-		$this->socket->send(pack("Na*a*", strlen($l) + 8, "\x00\x03\x00\x00", $l));
+		$this->socket->send(pack("Na*a*", length($l) + 8, "\x00\x03\x00\x00", $l));
 
 		forever
 		{
@@ -53,7 +53,7 @@ class PostgreSQL
 
 		// Parse
 		$stmt = "";
-		$data = pack("Z*Z*n", $stmt, $query, count($params));
+		$data = pack("Z*Z*n", $stmt, $query, length($params));
 		foreach ($params as $p) {
 			if (is_string($p))
 				$data .= pack("N", 25);
@@ -62,23 +62,23 @@ class PostgreSQL
 			else
 				$data .= pack("N", 705);
 		}
-		$this->socket->send(pack("aNa*", "P", 4 + strlen($data), $data));
+		$this->socket->send(pack("aNa*", "P", 4 + length($data), $data));
 
 		// Bind
 		$portal = "";
 		$stmt = "";
-		$data = pack("Z*Z*nnn", $portal, $stmt, 1, 0, count($params));
-		foreach ($params as $p) $data .= pack("Na*", strlen($p), $p);
+		$data = pack("Z*Z*nnn", $portal, $stmt, 1, 0, length($params));
+		foreach ($params as $p) $data .= pack("Na*", length($p), $p);
 		$data .= pack("nn", 1, 0);
-		$this->socket->send(pack("aNa*", "B", 4 + strlen($data), $data));
+		$this->socket->send(pack("aNa*", "B", 4 + length($data), $data));
 
 		// Describe
 		$name = "";
-		$this->socket->send(pack("aNaZ*", "D", 4 + 1 + strlen($name) + 1, "S", $name));
+		$this->socket->send(pack("aNaZ*", "D", 4 + 1 + length($name) + 1, "S", $name));
 
 		// Execute
 		$portal = "";
-		$this->socket->send(pack("aNZ*N", "E", 4 + strlen($portal) + 1 + 4, $portal, 0));
+		$this->socket->send(pack("aNZ*N", "E", 4 + length($portal) + 1 + 4, $portal, 0));
 
 		// Sync
 		$this->socket->send(pack("aN", "S", 4));
@@ -90,7 +90,7 @@ class PostgreSQL
 	{
 		$this->error = none;
 
-		$this->socket->send(pack("aNZ*", "Q", 4 + strlen($statement) + 1, $statement));
+		$this->socket->send(pack("aNZ*", "Q", 4 + length($statement) + 1, $statement));
 
 		return $this->getQueryResponse();
 	}
@@ -115,7 +115,7 @@ class PostgreSQL
 				while ($numfields > 0)
 				{
 					[$col] = unpack("Z*", $data, $o);
-					$o += strlen($col) + 1;
+					$o += length($col) + 1;
 					$fields[] = $col;
 
 					/*
@@ -186,7 +186,7 @@ class PostgreSQL
 			if ($chunk == none)
 				return none;
 			$data .= $chunk;
-			$len -= strlen($chunk);
+			$len -= length($chunk);
 			$chunk = "";
 		}
 

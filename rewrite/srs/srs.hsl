@@ -18,12 +18,12 @@ function SRS_reverse($localpart, $opts = [])
 
 	if (str_lower($localpart[0:5]) != "srs0=") return;
 	$part = explode("=", $localpart, 5);
-	if (count($part) != 5) return;
+	if (length($part) != 5) return;
 
 	$key = base64_encode(pack("H*", hmac_sha1($secret, str_lower($part[2].$part[3].$part[4]))));
 	if (str_lower($key[0:$hashlen]) != str_lower($part[1])) return;
 
-	if (strlen($part[2]) != 2) return;
+	if (length($part[2]) != 2) return;
 	$days = 0;
 	$base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 	$i = 0;
@@ -31,7 +31,7 @@ function SRS_reverse($localpart, $opts = [])
 	{
 		$pos = str_find($base32, str_upper($part[2])[$i]);
 		if ($pos == -1) return;
-		$days = $days * strlen($base32) + $pos;
+		$days = $days * length($base32) + $pos;
 		$i += 1;
 	}
 	$now = floor(time() / 86400) % (32 ** 2);

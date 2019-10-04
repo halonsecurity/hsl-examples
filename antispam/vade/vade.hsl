@@ -65,7 +65,7 @@ class VADE
 		$b = 0;
 		while ($str = $fp->read(($this->msgsize - $b < 8192) ? ($this->msgsize - $b) : 8192)) {
 			if (!$socket->send($str)) return ["error" => "An error occurred when sending data"];
-			$b += strlen($str);
+			$b += length($str);
 			if ($b >= $this->msgsize)
 				break;
 		}
