@@ -11,7 +11,7 @@ SMTP client class
 **Returns**: class object.
 
 ## Example
-```
+```java
 // Returns [success, isPermanent, lastError]
 function SMTPDeliver($address, $sender, $recipients, $fp)
 {
@@ -26,7 +26,9 @@ function SMTPDeliver($address, $sender, $recipients, $fp)
 	$smtp->disconnect();
 	return [true];
 }
-[$ok, $ispermanent, $lasterror] = SMTPDeliver("1.2.3.4", $sender, $recipients, GetMailFile());
+
+$fp = $arguments["mail"]->toFile(); // Or use "GetMailMessage()->toFile();" in a EOD "Per recipient" script
+[$ok, $ispermanent, $lasterror] = SMTPDeliver("1.2.3.4", $sender, $recipients, $fp);
 ```
 
 ### connect()

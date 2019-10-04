@@ -4,7 +4,7 @@ Client for the [SpamAssassin (spamd) Network Protocol](https://github.com/apache
 **Params**
 
 - address `string` - IP-address to the spamd server. **Required**.
-- mail `File` - file object such as return type of [GetMailFile()](http://docs.halon.se/hsl/data.html#data.GetMailFile). **Required**.
+- mail `File` - file object such as return type of [toFile()](https://docs.halon.io/hsl/functions.html#MailMessage.toFile). **Required**.
 - opts `array` - options array
 
 **Returns**: class object.

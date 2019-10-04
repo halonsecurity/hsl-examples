@@ -26,7 +26,7 @@ Scans a message
 
 **Params**
 
-- fp `File` - file object such as return type of [GetMailFile()](http://docs.halon.se/hsl/data.html#data.GetMailFile). **Required**.
+- fp `File` - file object such as return type of [toFile()](https://docs.halon.io/hsl/functions.html#MailMessage.toFile). **Required**.
 
 **Returns**: associative array containing the result of the scan
 
@@ -44,7 +44,8 @@ Pings the Vade's service to check if it's responding
 include "vade";
 
 $vade = VADE("172.16.78.25", ["port" => 8080, "tls" => ["enabled" => true]]);
-$result = $vade->scan(GetMailFile());
+$fp = $arguments["mail"]->toFile(); // Or use "GetMailMessage()->toFile();" in a EOD "Per recipient" script
+$result = $vade->scan($fp);
 
 if (!$result["error"]) {
     echo $result;

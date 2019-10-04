@@ -29,7 +29,7 @@ Check if a message is spam or not.
 
 **Params**
 
-- fp `File` - file object such as return type of [GetMailFile()](http://docs.halon.se/hsl/data.html#data.GetMailFile). **Required**.
+- fp `File` - file object such as return type of [toFile()](https://docs.halon.io/hsl/functions.html#MailMessage.toFile). **Required**.
 
 **Returns**: associative array containing the result of the scan
 
@@ -40,7 +40,7 @@ Send a message to the controller for learning.
 
 **Params**
 
-- fp `File` - file object such as return type of [GetMailFile()](http://docs.halon.se/hsl/data.html#data.GetMailFile). **Required**.
+- fp `File` - file object such as return type of [toFile()](https://docs.halon.io/hsl/functions.html#MailMessage.toFile). **Required**.
 - type `string` - Specify a type, either spam or ham. **Required**.
 
 **Returns**: associative array containing the result of the scan
