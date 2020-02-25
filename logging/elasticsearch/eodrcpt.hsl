@@ -1,4 +1,13 @@
-include "elastic.settings";
+include "elastic/settings.hsl";
+
+$httpoptions = [
+	"timeout" => 10,
+	"background" => true,
+	"background_hash" => hash($messageid),
+	"background_retry_count" => 1,
+	"tls_default_ca" => true,
+	"headers" => ["Content-Type: application/json"]
+];
 
 function sendlog($logdata = []) {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
@@ -10,6 +19,8 @@ function sendlog($logdata = []) {
 	$time = time();
 	$logdata += [
 		"serial" => serial(),
+		"owner" => $recipient,
+		"ownerdomain" => $recipientdomain,
 		"hostname" => gethostname(),
 		"messageid" => $transaction["id"],
 		"senderip" => $senderip,
@@ -32,8 +43,11 @@ function sendlog($logdata = []) {
 		"actionid" => $actionid,
 		"subject" => MIME("0")->getHeader("subject"),
 		"size" => MIME("0")->getSize(),
-		"receivedtime" => round($time * 1000)
+		"receivedtime" => round($time * 1000),
+		"metadata" => GetMetaData()
 	];
+
+	SetMetaData(GetMetaData() + ["receivedtime" => "$time"]);
 
 	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$transaction["id"].":".$actionid;
 	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));

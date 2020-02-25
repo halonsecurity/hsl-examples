@@ -1,13 +1,4 @@
-$elasticurl = "http://elastic:elastic@yourhostname.com:9200";
+$elasticurl = "https://user:password@yourhostname.com:9200";
 $indexname = "halon";
 $indexrotate = "%Y-%m-%d";
-$indextype = "mail";
-
-$httpoptions = [
-	"timeout" => 10,
-	"background" => true,
-	"background_hash" => hash($messageid),
-	"background_retry_count" => 1,
-	"tls_default_ca" => true,
-	"headers" => ["Content-Type: application/json"]
-];
+$indextype = "_doc";

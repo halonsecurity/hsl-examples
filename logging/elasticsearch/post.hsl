@@ -1,31 +1,37 @@
-include "elastic.settings";
+include "elastic/settings.hsl";
+
+$httpoptions = [
+	"timeout" => 10,
+	"background" => true,
+	"background_hash" => hash($message["id"]["transaction"]),
+	"background_retry_count" => 1,
+	"tls_default_ca" => true,
+	"headers" => ["Content-Type: application/json"]
+];
 
 function sendlog() {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
-	global $messageid, $sender, $senderdomain, $recipient, $recipientdomain, $transportid, $actionid; // previous contexts
-	global $receivedtime, $retry, $retries, $errormsg, $errorcode, $errorndr, $transfertime, $action; // post-delivery
+	global $message, $arguments;
 
+	$receivedtime = GetMetaData()["receivedtime"];
 	$time = time();
-
 	$logdata["doc"] = [
-		"retry" => $retry,
-		"retries" => $retries,
-		"errormsg" => $errormsg,
-		"errorcode" => $errorcode,
-		"errorndr" => $errorndr,
-		"transfertime" => $transfertime,
-		"action" => $action == "" ? "DELIVER" : $action,
-		"sender" => $sender,
-		"senderlocalpart" => $senderlocalpart,
-		"senderdomain" => $senderdomain,
-		"recipient" => $recipient,
-		"recipientlocalpart" => $recipientlocalpart,
-		"recipientdomain" => $recipientdomain,
-		"transportid" => $transportid,
+		"queue" => [
+			"action" => $arguments["action"] ?? "DELIVER",
+			"retry" => $arguments["retry"],
+			"errormsg" => $arguments["attempt"]["result"]["reason"][0] ?? "",
+			"errorcode" => $arguments["attempt"]["result"]["code"],
+			"transfertime" => $arguments["attempt"]["duration"]
+		],
+		"sender" => $message["sender"],
+		"senderdomain" => $message["senderaddress"]["domain"],
+		"recipient" => $message["recipient"],
+		"recipientdomain" => $message["recipientaddress"]["domain"],
+		"transportid" => $message["transportid"],
 		"finishedtime" => round($time * 1000)
 	];
 
-	$path = "/".$indexname."-".strftime($indexrotate, $receivedtime)."/".$indextype."/".$messageid.":".$actionid."/_update";
+	$path = "/".$indexname."-".strftime($indexrotate, $receivedtime)."/".$indextype."/".$message["id"]["transaction"].":".$message["id"]["queue"]."/_update";
 	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));
 }
 
