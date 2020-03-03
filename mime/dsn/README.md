@@ -1,6 +1,6 @@
 ## dsn_parse($message)
 
-Parse a rfc3464 compliant MIME part (message/delivery-status), into a associative array containng the per-message fields and per-recipient fields (all lowercased).
+Parse a rfc3464 compliant MIME part (message/delivery-status), into a associative array containing the per-message fields and per-recipient fields (all lowercased).
 
 ```
 {
