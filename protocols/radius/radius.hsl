@@ -20,7 +20,8 @@ class Radius
 			$attributes .= pack("CCa*", length($packedip) == 4 ? 0x0e : 0x62, 2 + length($packedip), $packedip);
 		}
 		$attributes .= pack("CCa*", 0x01, 2 + length($username), $username);
-		$attributes .= pack("CCa*", 0x02, 2 + 16, $this->__encrypt_pass($this->secret, $authenticator, $password));
+		$pass = $this->__encrypt_pass($this->secret, $authenticator, $password);
+		$attributes .= pack("CCa*", 0x02, 2 + length($pass), $pass);
 
 		$requestid = random_number(0, 255);
 		$data = 
@@ -63,11 +64,17 @@ class Radius
 	}
 	private function __encrypt_pass($secret, $authenticator, $password)
 	{
-		$a = pack("a16", $password);
-		$b = pack("H*", md5($secret.$authenticator));
+		$x = $authenticator;	
 		$r = "";
-		for ($i = 0; $i < 16; $i++)
-			$r .= chr(ord($a[$i]) ^ ord($b[$i]));
+		foreach (pcre_match_all("(.{1,16})", $password)[1] as $chunk)
+		{
+			$b = pack("H*", md5($secret.$x));
+			$p = pack("a16", $chunk);
+			$x = "";
+			for ($i = 0; $i < 16; $i++)
+				$x .= chr(ord($p[$i]) ^ ord($b[$i]));
+			$r .= $x;
+		}
 		return $r;
 	}
 }
