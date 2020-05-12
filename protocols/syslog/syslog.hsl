@@ -54,10 +54,11 @@ class Syslog
 	{
 		$facility = Syslog::$facilities[$opts["facility"]] ?? $this->facility;
 		$priority = Syslog::$priorities[$priority] ?? Syslog::$priorities["debug"];
-		return $this->socket->send("<" . ($facility + $priority) . ">" .
+		$r = $this->socket->send("<" . ($facility + $priority) . ">" .
 			strftime("%b %d %H:%M:%S", timelocal()) . " " .
 			$this->hostname . " " .
 			$this->application . ": " .
-			$message) > 0;
+			$message);
+		return $r !== none and $r > 0;
 	}
 }
