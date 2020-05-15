@@ -1,0 +1,99 @@
+include "elastic/settings.hsl";
+
+$httpoptions = [
+	"timeout" => 10,
+	"background" => true,
+	"background_hash" => hash($transaction["id"]),
+	"background_retry_count" => 1,
+	"tls_default_ca" => true,
+	"headers" => ["Content-Type: application/json"]
+];
+
+$logdata = [
+	"direction" => "inbound"
+];
+
+/**
+	* @param $action "QUEUE", "DEFER", "REJECT", "DELETE", "QUARANTINE"
+	* @param $reason string
+	* @param $recipient array https://docs.halon.io/hsl/eodonce.html#v-t-r6
+	* @param $receivedtime int
+	* @param $actionid int
+	* @param $metadata array
+	*/
+function sendlog($action, $reason, $recipient, $receivedtime, $actionid = 1, $metadata = []) {
+	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
+	global $transaction, $connection, $arguments; // eod
+	global $logdata;
+
+	$logdata += [
+		"action" => $action,
+		"reason" => $reason,
+		"serial" => serial(),
+		"owner" => $logdata["direction"] == "outbound" ? $transaction["sender"] : $recipient["address"]["localpart"]."@".$recipient["address"]["domain"],
+		"ownerdomain" => $logdata["direction"] == "outbound" ? $transaction["senderaddress"]["domain"] : $recipient["address"]["domain"],
+		"hostname" => gethostname(),
+		"messageid" => $transaction["id"],
+		"senderip" => $connection["remoteip"],
+		"senderport" => $connection["remoteport"],
+		"serverip" => $connection["localip"],
+		"serverport" => $connection["localport"],
+		"serverid" => $connection["serverid"],
+		"senderhelo" => $connection["helo"]["host"] ?? "",
+		"tlsstarted" => isset($connection["tls"]),
+		"saslusername" => $connection["auth"]["username"] ?? "",
+		"saslauthed" => isset($connection["auth"]),
+		"sender" => $transaction["sender"],
+		"senderlocalpart" => $transaction["senderaddress"]["localpart"],
+		"senderdomain" => $transaction["senderaddress"]["domain"],
+		"senderparams" => $transaction["senderparams"],
+		"recipient" => $recipient["address"]["localpart"]."@".$recipient["address"]["domain"],
+		"recipientlocalpart" => $recipient["address"]["localpart"],
+		"recipientdomain" => $recipient["address"]["domain"],
+		"transportid" => $recipient["transportid"],
+		"actionid" => $actionid,
+		"subject" => $arguments["mail"]->getHeader("subject"),
+		"size" => $arguments["mail"]->getSize(),
+		"receivedtime" => round($receivedtime * 1000),
+		"metadata" => $metadata
+	];
+
+	$path = "/".$indexname."-".strftime($indexrotate, $receivedtime)."/".$indextype."/".$transaction["id"].":".$actionid;
+	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));
+}
+
+function ScanRPD(...$args) {
+	global $logdata;
+	$outbound = $args[0]["outbound"] ?? false;
+	$logdata["score_rpd"] = builtin ScanRPD([ "outbound" => $outbound ]);
+	$logdata["score_rpd_refid"] = builtin ScanRPD([ "outbound" => $outbound, "refid" => true ]);
+	$logdata["score_rpdav"] = builtin ScanRPD([ "outbound" => $outbound, "extended_result" => true ])["virus_score"];
+	return builtin ScanRPD(...$args);
+}
+function ScanSA(...$args) {
+	global $logdata;
+	$logdata["scores"]["sa"] = builtin ScanSA();
+	$logdata["scores"]["sa_rules"] = builtin ScanSA(["rules" => true]);
+	return builtin ScanSA(...$args);
+}
+function ScanKAV(...$args) {
+	global $logdata;
+	$logdata["scores"]["kav"] = builtin ScanKAV() ? : "";
+	return builtin ScanKAV(...$args);
+}
+function ScanCLAM(...$args) {
+	global $logdata;
+	$logdata["scores"]["clam"] = builtin ScanCLAM() ? : "";
+	return builtin ScanCLAM(...$args);
+}
+
+/*
+	// EOD example
+	include "elastic/eod.hsl";
+
+	$actionid = 1;
+	$receivedtime = time();
+	$metadata["receivedtime"] = "$receivedtime";
+
+	sendlog("QUEUE", "", $recipient, $receivedtime, $actionid++, $metadata);
+*/
