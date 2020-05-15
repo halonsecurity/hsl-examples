@@ -17,8 +17,8 @@ $logdata = [
 	* @param $action "QUEUE", "DEFER", "REJECT", "DELETE", "QUARANTINE"
 	* @param $reason string
 	* @param $recipient array https://docs.halon.io/hsl/eodonce.html#v-t-r6
-	* @param $receivedtime int
-	* @param $actionid int
+	* @param $receivedtime number
+	* @param $actionid number
 	* @param $metadata array
 	*/
 function sendlog($action, $reason, $recipient, $receivedtime, $actionid = 1, $metadata = []) {
