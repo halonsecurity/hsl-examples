@@ -2,8 +2,8 @@
 An ARC implementation based on [draft-ietf-dmarc-arc-protocol-18](https://tools.ietf.org/html/draft-ietf-dmarc-arc-protocol-18).
 
 ```java
-include "authentication.header";
-include "authentication.arc";
+include "authentication/header";
+include "authentication/arc";
 
 $chain = ARC::chainValidate();
 if ($chain["status"] == "pass" or $chain["status"] == "none")
