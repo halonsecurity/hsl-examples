@@ -16,7 +16,9 @@ function sendlog($logdata = []) {
 	global $saslauthed; // mail from
 	global $recipient, $recipientlocalpart, $recipientdomain, $transportid, $actionid; // eodrcpt
 
+	$mail = GetMailMessage();
 	$time = time();
+
 	$logdata += [
 		"serial" => serial(),
 		"owner" => $recipient,
@@ -41,8 +43,8 @@ function sendlog($logdata = []) {
 		"recipientdomain" => $recipientdomain,
 		"transportid" => $transportid,
 		"actionid" => $actionid,
-		"subject" => MIME("0")->getHeader("subject"),
-		"size" => MIME("0")->getSize(),
+		"subject" => $mail->getHeader("subject"),
+		"size" => $mail->getSize(),
 		"receivedtime" => round($time * 1000),
 		"metadata" => GetMetaData()
 	];
