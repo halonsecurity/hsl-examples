@@ -9,20 +9,24 @@ $httpoptions = [
 	"headers" => ["Content-Type: application/json"]
 ];
 
+$logdata = [
+	"direction" => "inbound"
+];
+
 function sendlog($logdata = []) {
 	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
 	global $transaction, $senderip, $senderport, $serverip, $serverport, $serverid; // connect
 	global $senderhelo, $tlsstarted, $saslusername; // auth
 	global $saslauthed; // mail from
-	global $recipient, $recipientlocalpart, $recipientdomain, $transportid, $actionid; // eodrcpt
+	global $recipient, $recipientlocalpart, $recipientdomain, $transportid, $actionid, $sender, $senderdomain; // eodrcpt
 
 	$mail = GetMailMessage();
 	$time = time();
 
 	$logdata += [
 		"serial" => serial(),
-		"owner" => $recipient,
-		"ownerdomain" => $recipientdomain,
+		"owner" => $logdata["direction"] == "outbound" ? $sender : $recipient,
+		"ownerdomain" => $logdata["direction"] == "outbound" ? $senderdomain : $recipientdomain,
 		"hostname" => gethostname(),
 		"messageid" => $transaction["id"],
 		"senderip" => $senderip,
