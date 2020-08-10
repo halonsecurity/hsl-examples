@@ -1,0 +1,207 @@
+function DMARC($mail, $ipaddr, $helo, $mfrom)
+{
+	$headers = $mail->getHeaders("from");
+	if (length($headers) == 0)
+	{
+		echo "No [MAIL].From header";
+		return "permerror";
+	}
+	if (length($headers) > 1)
+	{
+		echo "Too many [MAIL].From headers";
+		return "permerror";
+	}
+
+	$fromAddresses = header_addresslist_extract($headers[0]);
+	if ($fromAddresses === none)
+	{
+		echo "Bad [MAIL].From address";
+		return "permerror";
+	}
+	if (length($fromAddresses) == 0)
+	{
+		echo "No [MAIL].From address";
+		return "permerror";
+	}
+	if (length($fromAddresses) > 1)
+	{
+		echo "Too many [MAIL].From addresses";
+		return "permerror";
+	}
+	$split = str_split($fromAddresses[0], "@", -2);
+	if (length($split) != 2 or $split[1] == "")
+	{
+		echo "Bad [MAIL].From address: no domain";
+		return "permerror";
+	}
+	$senderdomain = str_lower($split[1]);
+	$helo = str_lower($helo);
+	$mfrom = str_lower($mfrom);
+
+	$info = [];
+	$info["ipaddr"] = $ipaddr;
+	$info["helo"] = $helo;
+	$info["from"] = $info["pdomain"] = $senderdomain;
+	$info["mfrom"] = $mfrom;
+
+	$lookup = dns_query("_dmarc." . $senderdomain, ["type" => "txt"]);
+	$domainOrg = none;
+
+	if (!$lookup["result"] or !($tagList = getValidDMARCRecord($lookup["result"])))
+	{
+		$domainOrg = organizationalDomain($senderdomain);
+		if (!$domainOrg)
+		{
+			if ($lookup["error"] == "SERVFAIL" or $lookup["error"] == "TRY_AGAIN")
+				return [ $senderdomain => "temperror" ];
+			return [ $senderdomain => "policy_absent" ];
+		}
+		$info["pdomain"] = $domainOrg;
+
+		$lookup = dns_query("_dmarc." . $domainOrg, ["type" => "txt"]);
+		if (!$lookup["result"])
+		{
+			if ($lookup["error"] == "SERVFAIL" or $lookup["error"] == "TRY_AGAIN")
+				return [ $senderdomain => "temperror" ];
+			return [ $senderdomain => "policy_absent" ];
+		}
+
+		if (!($tagList = getValidDMARCRecord($lookup["result"])))
+		{
+			return [ $senderdomain => "policy_absent" ];
+		}
+	}
+
+	$tagp = $domainOrg ? $tagList["sp"] ?? $tagList["p"] : $tagList["p"];
+	if (!$tagp)
+	{
+		echo "p= is missing";
+		return [ $senderdomain => "policy_absent" ];
+	}
+
+	$strictSPF = $tagList["aspf"] == "s";
+	$strictDKIM = $tagList["adkim"] == "s";
+	$pct = $tagList["pct"] ? number($tagList["pct"]) : 100;
+
+	if ($tagList["rua"])
+		$info["rua"] = $tagList["rua"];
+	$info["aspf"] = $strictSPF ? "strict" : "relaxed";
+	$info["adkim"] = $strictDKIM ? "strict" : "relaxed";
+	$info["pct"] = $pct;
+	if ($tagList["p"])
+		$info["p"] = $tagList["p"] == "reject" ? "reject" : ($tagList["p"] == "quarantine" ? "quarantine" : "none");
+	if ($tagList["sp"])
+		$info["sp"] = $tagList["sp"] == "reject" ? "reject" : ($tagList["sp"] == "quarantine" ? "quarantine" : "none");
+
+	$passSPF = false; $passDKIM = false;
+	$checkSPF = false; $checkDKIM = false;
+
+	$info["spf"] = "unknown";
+	if (checkIdentifierAligment($mfrom ? $mfrom : $helo, $senderdomain, $strictSPF)) {
+		$checkSPF = true;
+		$spf = spf_query($ipaddr, $helo, $mfrom);
+		if ($spf["result"] == "pass")
+			$passSPF = true;
+		$info["spf"] = $spf["result"];
+	}
+
+	foreach ($mail->getHeaders("DKIM-Signature") as $x => $header)
+	{
+		$dkim = header_dkim_decode($header);
+		if (!$dkim or !$dkim["d"])
+			continue;
+		$dkimdomain = str_lower($dkim["d"]);
+		if (!checkIdentifierAligment($dkimdomain, $senderdomain, $strictDKIM))
+			continue;
+
+		$checkDKIM = true;
+		$r = $mail->verifyDKIM($mail->getHeader("DKIM-Signature", ["index" => $x, "field" => true]));
+
+		$info["dkim:" . $dkimdomain] = $r["result"];
+		if ($r["result"] == "pass")
+		{
+			$passDKIM = true;
+			break;
+		}
+	}
+
+	$selected = false;
+	if ($pct == 100 or rand(0, 100) < $pct)
+		$selected = true;
+
+	$action = "pass"; $policy = "pass";
+	if (!$passSPF and !$passDKIM) {
+		if ($tagp == "reject") {
+			$policy = "reject";
+			$action = $selected ? "reject" : "quarantine";
+		}
+		else if ($tagp == "quarantine") {
+			$policy = "quarantine";
+			$action = $selected ? "quarantine" : "none";
+		}
+		else if ($tagp == "none")
+			$policy = $action = "none";
+		else
+			$policy = $action = "none";
+	}
+
+	$info["align_spf"] = $checkSPF ? ($passSPF ? "pass": "fail") : "unaligned";
+	$info["align_dkim"] = $checkDKIM ? ($passDKIM ? "pass": "fail") : "unaligned";
+	$info["policy"] = $policy;
+	$info["action"] = $action;
+
+	$log = [];
+	foreach (array_sort(function($a, $b) { return $a < $b; }, $info, [ "keys" => true ]) as $k => $v)
+		$log[] = $k . "=" . $v;
+
+	echo "[DMARC] [MAIL].From=%s SPF=%s DKIM=%s DMARC=%s (%s)" % [
+		$senderdomain,
+		$checkSPF ? ($passSPF ? "pass": "fail") : "unaligned",
+		$checkDKIM ? ($passDKIM ? "pass": "fail") : "unaligned",
+		$action, array_join($log, "; ")
+	];
+
+	return [ $senderdomain => $action ];
+}
+
+function organizationalDomain($domain)
+{
+	$publicSuffix = domain_publicsuffix($domain);
+	if ($publicSuffix == none)
+		return none;
+
+	$domainParts = str_split($domain, ".");
+	$domainTLD = str_split($publicSuffix, ".");
+	if (length($domainTLD) == length($domainParts))
+		return none;
+
+	$domainOrg = array_join($domainParts[-length($domainTLD) - 1:], ".");
+	if ($domainOrg == $domain)
+		return none;
+	
+	return $domainOrg;
+}
+
+function checkIdentifierAligment($domain1, $domain2, $strict)
+{
+	if ($strict)
+		return $domain1 == $domain2;
+
+	$domainOrg1 = organizationalDomain($domain1);
+	$domainOrg1 = $domainOrg1 ?? $domain1;
+	$domainOrg2 = organizationalDomain($domain2);
+	$domainOrg2 = $domainOrg2 ?? $domain2;
+
+	return $domainOrg1 == $domainOrg2;
+}
+
+function getValidDMARCRecord($records)
+{
+	foreach ($records as $r)
+	{
+		$x = header_dkim_decode($r);
+		if (isset($x["v"]) and $x["v"] == "DMARC1")
+			return $x;
+	}
+	return none;
+}
