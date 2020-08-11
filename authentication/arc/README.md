@@ -5,10 +5,10 @@ An ARC implementation based on [draft-ietf-dmarc-arc-protocol-18](https://tools.
 include "authentication/header";
 include "authentication/arc";
 
-$chain = ARC::chainValidate();
+$chain = ARC::chainValidate($mime);
 if ($chain["status"] == "pass" or $chain["status"] == "none")
 {
-	ARC::seal(
+	ARC::seal($mime,
 			"201805", "example.com", "pki:arc",
 			$chain,
 			AuthenticationResults()
