@@ -1,9 +1,9 @@
 class ARC
 {
-	static function chainValidate()
+	static function chainValidate($mime)
 	{
 		$arcset = [];
-		foreach (MIME("0")->getHeaders("ARC-Seal") as $x => $header)
+		foreach ($mime->getHeaders("ARC-Seal") as $x => $header)
 		{
 			$tl = static::taglist($header);
 			if (!$tl) return [
@@ -27,9 +27,9 @@ class ARC
 
 		if (length($arcset) == 0) return ["status" => "none"];
 
-		foreach (MIME("0")->getHeaders("ARC-Message-Signature", ["field" => true]) as $x => $header)
+		foreach ($mime->getHeaders("ARC-Message-Signature", ["field" => true]) as $x => $header)
 		{
-			$tl = static::taglist(pcre_replace(''/[\r\n]/'', "", explode(":", $header, 2)[1]));
+			$tl = static::taglist(pcre_replace(''/[\r\n]/'', "", str_split($header, ":", 2)[1]));
 			if (!$tl) return [
 				"status" => "fail",
 				"error" => "Could not parse ARC-Message-Signature header ($x)"
@@ -49,7 +49,7 @@ class ARC
 			];
 		}
 
-		foreach (MIME("0")->getHeaders("ARC-Authentication-Results") as $x => $header)
+		foreach ($mime->getHeaders("ARC-Authentication-Results") as $x => $header)
 		{
 			$h = pcre_match(''/^i\s*=\s*([0-9]{1,2})\s*;\s*(.*?)$/'', $header);
 			$i = $h[1];
@@ -96,7 +96,7 @@ class ARC
 
 		$highest = length($arcset);
 
-		$dkim = DKIMVerify($arcset[$highest]["ams"]["h"]);
+		$dkim = $mime->verifyDKIM($arcset[$highest]["ams"]["h"]);
 		if ($dkim["result"] != "pass") return [
 			"status" => "fail",
 			"error" => "ARC-Message-Signature (i=$highest) could not be verified: " . $dkim["error"]
@@ -105,7 +105,7 @@ class ARC
 		$oldestpass = length($arcset) - 1;
 		for (; $oldestpass > 0; --$oldestpass)
 		{
-			$dkim = DKIMVerify($arcset[$oldestpass]["ams"]["h"]);
+			$dkim = $mime->verifyDKIM($arcset[$oldestpass]["ams"]["h"]);
 			if ($dkim["result"] != "pass") 
 			{
 				$oldestpass += 1;
@@ -166,11 +166,11 @@ class ARC
 			];
 	}
 
-	static function seal($selector, $domain, $privatekey, $chain, $ar)
+	static function seal($mime, $selector, $domain, $privatekey, $chain, $ar)
 	{
 		$i = $chain["status"] != "none" ? $chain["instance"] + 1 : 1;
 
-		$ams = DKIMSign(
+		$ams = $mime->signDKIM(
 				$selector, $domain, $privatekey,
 				[
 					"arc" => $i,
@@ -206,9 +206,9 @@ class ARC
 		$sig = rsa_sign($data, $privatekey, ["id" => ($privatekey[0:4] == "pki:"), "hash" => "sha256"]);
 		$headers[2][1] .= static::split_header_b(base64_encode($sig));
 
-		MIME("0")->addHeader($headers[0][0], $headers[0][1], ["encode" => false]);
-		MIME("0")->addHeader($headers[1][0], $headers[1][1], ["encode" => false]);
-		MIME("0")->addHeader($headers[2][0], $headers[2][1], ["encode" => false]);
+		$mime->addHeader($headers[0][0], $headers[0][1], ["encode" => false]);
+		$mime->addHeader($headers[1][0], $headers[1][1], ["encode" => false]);
+		$mime->addHeader($headers[2][0], $headers[2][1], ["encode" => false]);
 		return true;
 	}
 
@@ -229,7 +229,7 @@ class ARC
 	
 	static function header_canonicalization($header)
 	{
-		[$name, $value] = explode(":", $header, 2);
+		[$name, $value] = str_split($header, ":", 2);
 		$name = str_lower($name);
 		$value = pcre_replace(''/\r\n([ \t])/'', "$1", $value);
 		$value = pcre_replace(''/[ \t]+/'', " ", $value);
@@ -240,7 +240,7 @@ class ARC
 	static function taglist($list)
 	{
 		$result = pcre_match_all(''/[\s]*([a-z0-9_]+)[\s]*=[\s]*([\x21-\x3A\x3C-\x7E\s]*?)[\s]*(;|$)/'', $list);
-		if (implode("", $result[0]) != $list)
+		if (array_join($result[0]) != $list)
 			return none;
 		$tags = [];
 		for ($i = 0; $i < length($result[1]); $i++)
