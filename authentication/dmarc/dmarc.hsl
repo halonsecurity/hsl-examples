@@ -205,3 +205,59 @@ function getValidDMARCRecord($records)
 	}
 	return none;
 }
+
+function domain_publicsuffix($domain)
+{
+	$rules = memory_fetch("public_suffix_list.dat", function ($k) {
+			$rules = Set("string");
+			$file = File("file://public_suffix_list.dat");
+			if (!$file)
+				return false;
+			while (is_string($line = $file->readline()))
+			{
+				$line = str_strip($line);
+				if ($line[0] == "/" or $line == "")
+					continue;
+				$rules->add($line);
+			}
+			memory_store("public_suffix_list.dat", $rules);
+			return $rules;
+		});
+	if (!$rules)
+	{
+		echo "Could not load public suffix rules";
+		return none;
+	}
+
+	$domain = array_reverse(str_split(str_lower($domain), "."));
+	$tld = [];
+	$segments = "";
+	$wildcard = "";
+
+	for ($i = 0; $i < length($domain); ++$i)
+	{
+		$wildcard = "*" . ($segments != "" ? "." . $segments : "");
+		$segments = $domain[$i] . ($segments != "" ? "." . $segments : "");
+
+		if ($rules->has("!" . $segments))
+		{
+			$tld = $domain[0:$i];
+			break;
+		}
+		if ($rules->has($wildcard))
+		{
+			$tld = $domain[0:$i + 1];
+			continue;
+		}
+		if ($rules->has($segments))
+		{
+			$tld = $domain[0:$i + 1];
+			continue;
+		}
+	}
+
+	if (!$tld)
+		return none;
+
+	return array_join(array_reverse($tld), ".");
+}
