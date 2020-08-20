@@ -1,4 +1,4 @@
-function DMARC($mail, $ipaddr, $helo, $mfrom)
+function DMARC($mail, $ipaddr, $helo, $mfrom, $id)
 {
 	$headers = $mail->getHeaders("from");
 	if (length($headers) == 0)
@@ -39,6 +39,8 @@ function DMARC($mail, $ipaddr, $helo, $mfrom)
 	$mfrom = str_lower($mfrom);
 
 	$info = [];
+	$info["id"] = $id;
+	$info["ts"] = time();
 	$info["ipaddr"] = $ipaddr;
 	$info["helo"] = $helo;
 	$info["from"] = $info["pdomain"] = $senderdomain;
