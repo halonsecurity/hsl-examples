@@ -1,0 +1,15 @@
+function ulid()
+{
+	$now = time() * 1000;
+	$chars = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+	$mod = 0;
+	$str = "";
+	for ($len = 0; $len < 10; $len++) {
+		$mod = $now % 32;
+		$str = $chars[$mod] . $str;
+		$now = ($now - $mod) / 32;
+	}
+	for ($len = 0; $len < 16; $len++)
+		$str .= $chars[random_number(0, 31)];
+	return $str;
+}
