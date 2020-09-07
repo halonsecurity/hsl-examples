@@ -1,0 +1,54 @@
+function arf_parse($mail, $options = ["original_message" => false, "original_headers" => false])
+{
+    if ($mail->getType() !== "multipart/report")
+        return none;
+    $parts = $mail->findByType(''^message/feedback-report$'');
+    if (!$parts)
+        return none;
+    $body = $parts[0]->getBody();
+    if (!$body)
+        return none;
+    $report = MailMessage::String($body);
+    if (!$report)
+        return none;
+
+    $arf = [];
+    foreach (["date", "from", "to", "subject"] as $header) {
+        $value = $mail->getHeader($header);
+        if ($header === "from" or $header === "to") {
+            $addresses = header_addresslist_extract($value);
+            if ($addresses) $arf[$header] = $header === "from" ? $addresses[0] : $addresses;
+        } else {
+            if ($value) $arf[$header] = $value;
+        }
+    }
+
+    $arf["feedback_report"] = [];
+    $fields = $report->getHeaderNames();
+    foreach ($fields as $field) {
+        $values = $report->getHeaders($field);
+        $arf["feedback_report"][$field] = $values;
+    }
+
+    if ($options["original_message"]) {
+        $parts = $mail->findByType(''^message/rfc822$'');
+        if ($parts) {
+            $body = $parts[0]->getBody();
+            if ($body) {
+                $arf["original_message"] = $body;
+            }
+        }
+    }
+
+    if ($options["original_headers"]) {
+        $parts = $mail->findByType(''^text/rfc822-headers$'');
+        if ($parts) {
+            $body = $parts[0]->getBody();
+            if ($body) {
+                $arf["original_headers"] = $body;
+            }
+        }
+    }
+
+    return $arf;
+}
