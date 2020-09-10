@@ -3,38 +3,23 @@ function dsn_parse($mail)
     $parts = $mail->findByType("^message/delivery-status$");
     if (!$parts)
         return none;
-    $data = $parts[0]->getBody();
+    [$message, ...$recipients] = array_map(
+                    MailMessage::String,
+                    str_split(str_replace("\r\n", "\n", $parts[0]->getBody()), "\n\n")
+                );
+
     $dsn = [];
-    $state = "G";
-    $buffer = [];
-    foreach ([...array_map(str_strip, str_split($data, "\n")), ""] as $value)
+    foreach ($message->getHeaderNames() as $field)
+        $dsn["message"][$field] = $message->getHeaders($field)[0];
+    foreach ($recipients as $recipient)
     {
-        if ($value == "")
-        {
-            if ($state == "G")
-            {
-                if (length($buffer))
-                {
-                    $dsn["message"] = $buffer;
-                    $buffer = [];
-                }
-                $state = "R";
-            }
-            else if ($state == "R")
-            {
-                if (length($buffer))
-                {
-                    $dsn["recipients"][] = $buffer;
-                    $buffer = [];
-                }
-                $state = "R";
-            }
-        }
-        else
-        {
-            [$k, $v] = array_map(str_strip, str_split($value, ":", 2));
-            $buffer[str_lower($k)] = $v;
-        }
+        $r = [];
+        foreach ($recipient->getHeaderNames() as $field)
+            $r[$field] = $recipient->getHeaders($field)[0];
+        if (!$r)
+            continue;
+        $dsn["recipients"][] = $r;
     }
+
     return $dsn;
 }
