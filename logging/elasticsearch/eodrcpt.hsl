@@ -18,8 +18,8 @@ function sendlog($logdata = []) {
 	global $senderip, $senderport, $serverip, $serverport, $serverid;
 	global $senderhelo, $tlsstarted, $saslusername, $saslauthed;
 	global $messageid, $recipient, $senderlocalpart, $recipientlocalpart;
-    global $recipientdomain, $transportid, $actionid, $sender, $senderdomain;
-    global $senderparams;
+	global $recipientdomain, $transportid, $actionid, $sender, $senderdomain;
+	global $senderparams;
 
 	$mail = GetMailMessage();
 	$time = time();
