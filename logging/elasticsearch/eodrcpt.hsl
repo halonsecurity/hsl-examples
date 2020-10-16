@@ -14,11 +14,12 @@ $logdata = [
 ];
 
 function sendlog($logdata = []) {
-	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype; // settings
-	global $transaction, $senderip, $senderport, $serverip, $serverport, $serverid; // connect
-	global $senderhelo, $tlsstarted, $saslusername; // auth
-	global $saslauthed; // mail from
-	global $recipient, $recipientlocalpart, $recipientdomain, $transportid, $actionid, $sender, $senderdomain; // eodrcpt
+	global $elasticurl, $httpoptions, $indexname, $indexrotate, $indextype;
+	global $senderip, $senderport, $serverip, $serverport, $serverid;
+	global $senderhelo, $tlsstarted, $saslusername, $saslauthed;
+	global $messageid, $recipient, $senderlocalpart, $recipientlocalpart;
+    global $recipientdomain, $transportid, $actionid, $sender, $senderdomain;
+    global $senderparams;
 
 	$mail = GetMailMessage();
 	$time = time();
@@ -28,7 +29,7 @@ function sendlog($logdata = []) {
 		"owner" => $logdata["direction"] == "outbound" ? $sender : $recipient,
 		"ownerdomain" => $logdata["direction"] == "outbound" ? $senderdomain : $recipientdomain,
 		"hostname" => gethostname(),
-		"messageid" => $transaction["id"],
+		"messageid" => $messageid,
 		"senderip" => $senderip,
 		"senderport" => $senderport,
 		"serverip" => $serverip,
@@ -38,10 +39,10 @@ function sendlog($logdata = []) {
 		"tlsstarted" => $tlsstarted,
 		"saslusername" => $saslusername,
 		"saslauthed" => $saslauthed,
-		"sender" => $transaction["sender"],
-		"senderlocalpart" => $transaction["senderlocalpart"],
-		"senderdomain" => $transaction["senderdomain"],
-		"senderparams" => $transaction["senderparams"],
+		"sender" => $sender,
+		"senderlocalpart" => $senderlocalpart,
+		"senderdomain" => $senderdomain,
+		"senderparams" => $senderparams,
 		"recipient" => $recipient,
 		"recipientlocalpart" => $recipientlocalpart,
 		"recipientdomain" => $recipientdomain,
@@ -55,7 +56,7 @@ function sendlog($logdata = []) {
 
 	SetMetaData(GetMetaData() + ["receivedtime" => "$time"]);
 
-	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$transaction["id"].":".$actionid;
+	$path = "/".$indexname."-".strftime($indexrotate, $time)."/".$indextype."/".$messageid.":".$actionid;
 	http($elasticurl.$path, $httpoptions, [], json_encode($logdata));
 }
 
