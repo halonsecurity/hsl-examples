@@ -1,23 +1,14 @@
-function authoritypost($opts, $headers, $fp)
+function ScanCM($opts, $senderip, $senderhelo, $sender, $recipients, $fp)
 {
-	$host = $opts["host"];
-	$port = number($opts["port"] ?? 80);
-	$maxMessageSize = $opts["max_message_size"] ?? (5 * 1024 * 1024);
-
-	$socket = Socket(Socket::AF($host), "SOCK_STREAM");
-	if (!$socket->settimeout(number($opts["timeout"] ?? 5))) return;
-	if (!$socket->connect($host, $port)) return;
-
-	$uri = $opts["uri"] ?? "/";
-	$length = $fp->seek(0, "SEEK_END");
-	if ($length > $maxMessageSize) 
-		$length = $maxMessageSize;
-	$fp->seek(0, "SEEK_SET");
-
 	$boundary = uuid();
-
 	$preamble = "";
-	foreach ($headers as $k => $v) {
+
+	foreach ([
+			"heloDomain" => $senderhelo,
+			"mailFrom" => $sender,
+			"rcptTo" => implode(";", $recipients),
+			"connIp" => $senderip
+		] as $k => $v) {
 		$preamble .= implode("\r\n", [
 				"--$boundary",
 				"Content-Disposition: form-data; name=\"$k\"",
@@ -25,59 +16,35 @@ function authoritypost($opts, $headers, $fp)
 				$v])."\r\n";
 	}
 
-	$rfc822 = implode("\r\n", [
-			"--$boundary",
+	$preamble .= implode("\r\n", [
+			"--".$boundary,
 			"Content-Disposition: form-data; name=\"rfc822\"",
-			""])."\r\n";
+			"",
+		  ])."\r\n";
+	$postamble = "\r\n--".$boundary."--\r\n";
+	$fp->seek(0, "SEEK_SET");
+	$data = [$preamble, $fp, $postamble];
 
-	$postamble = "\r\n--$boundary--\r\n";
-
-	$length += length($preamble) + length($rfc822) + length($postamble);
-
-	if (!$socket->send(implode("\r\n", [
-					"POST $uri HTTP/1.0",
-					"Host: $host:$port",
-					"User-Agent: Halon HTTP client (HSL)",
-					"Accept: application/json",
-					"Content-Length: $length",
-					"Content-Type: multipart/form-data; boundary=$boundary",
-	])."\r\n\r\n")) return;
-
-	if (!$socket->send($preamble)) return;
-	if (!$socket->send($rfc822)) return;
-
-	$b = 0;
-	while ($str = $fp->read(($maxMessageSize - $b < 8192) ? ($maxMessageSize - $b) : 8192)) {
-		if (!$socket->send($str)) return;
-		$b += length($str);
-		if ($b >= $maxMessageSize)
-			break;
-	}
-
-	if (!$socket->send($postamble)) return;
-
-	$response = "";
-	while ($resp = $socket->recv(8192))
-		$response .= $resp;
-
-	[$headers, $content] = explode("\r\n\r\n", $response);
-	[$http, $status, $msg] = explode(" ", explode("\r\n", $headers)[0]);
-
-	return ["status" => number($status), "content" => $content];
-}
-
-function ScanCM($opts, $senderip, $senderhelo, $sender, $recipients, $fp)
-{
-	$opts["uri"] = "/score/v2/message";
-
-	$headers = [
-			"heloDomain" => $senderhelo,
-			"mailFrom" => $sender,
-			"rcptTo" => implode(";", $recipients),
-			"connIp" => $senderip
-		];
-
-	$result = authoritypost($opts, $headers, $fp);
+	$result = http($opts["host"].":".$opts["port"]."/score/v2/message",
+					[
+						"timeout" => number($opts["timeout"] ?? 5),
+						"extended_result" => true,
+						"headers" => ["Content-type: multipart/form-data; boundary=".$boundary]
+					], [],
+					function ($size) closure ($data) {
+						while (length($data)) {
+							if (is_string($data[0])) {
+								$x = $data[0][0:$size];
+								$data[0] = $data[0][$size:];
+							} else {
+								$x = $data[0]->read($size);
+							}
+							if ($x !== "")
+								return $x;
+							$data = $data[1:];
+						}
+						return "";
+					});
 
 	if ($result["status"] != 200) {
 		echo "ScanCM() - Error ".$result["status"];
