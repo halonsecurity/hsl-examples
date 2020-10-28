@@ -29,7 +29,7 @@ function ScanCM($opts, $senderip, $senderhelo, $sender, $recipients, $fp)
 					[
 						"timeout" => number($opts["timeout"] ?? 5),
 						"extended_result" => true,
-						"headers" => ["Content-type: multipart/form-data; boundary=".$boundary]
+						"headers" => ["Content-type: multipart/form-data; boundary=".$boundary, "Connection: close"]
 					], [],
 					function ($size) closure ($data) {
 						while (length($data)) {
@@ -69,7 +69,8 @@ function ScanIPCM($opts, $ip)
 	$result = http($opts["host"].":".$opts["port"]."/score/v2/ip/".$ip,
 				[
 					"timeout" => number($opts["timeout"] ?? 5),
-					"extended_result" => true
+					"extended_result" => true,
+					"headers" => ["Connection: close"]
 				]);
 
 	if ($result["status"] != 200) {
