@@ -7,7 +7,9 @@ class SPAMC
 	private $user = none;
 	private $sender = none;
 	private $sizelimit = none;
+	private $conn = none;
 	private $socket = none;
+	private $tls = none;
 
 	constructor($address, $mail, $opts = [])
 	{
@@ -18,6 +20,7 @@ class SPAMC
 		$this->user = $opts["user"] ?? none;
 		$this->sender = $opts["sender"] ?? none;
 		$this->sizelimit = $opts["size_limit"] ?? 500 * 1024;
+		$this->tls = $opts["tls"] ?? ["enabled" => false];
 	}
 
 	function ping()
@@ -115,19 +118,23 @@ class SPAMC
 
 	private function __connect()
 	{
-		$this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
+		$this->conn = $this->socket = Socket(Socket::AF($this->address), "SOCK_STREAM");
 		if (!$this->socket->settimeout($this->timeout)) return;
 		if (!$this->socket->connect($this->address, $this->port)) return;
+		if ($this->tls["enabled"]) {
+			$this->socket = TLSSocket($this->socket, $this->tls["opts"] ?? []);
+			if (!$this->socket->handshake()) return;
+		}
 		return true;
 	}
 
 	private function __disconnect()
 	{
-		if (!$this->socket)
+		if (!$this->conn)
 			return;
 
-		$this->socket->shutdown("SHUT_RDWR");
-		$this->socket->close();
+		$this->conn->shutdown("SHUT_RDWR");
+		$this->conn->close();
 	}
 
 	private function __getSize()

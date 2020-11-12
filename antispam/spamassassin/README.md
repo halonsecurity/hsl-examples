@@ -16,6 +16,12 @@ The following options are available in the **opts** array.
 - sender `string` - Prepends a "Return-Path" header to the mail file with the provided envelope sender.
 - size_limit `number` - Size limit in bytes. The default is 512 000.
 - timeout `number` - Timeout in seconds. The default is 30 seconds.
+- tls `array` - TLS settings.
+
+The following options are available in the **tls** array.
+
+- enabled `boolean` - Enable TLS for the specific socket
+- opts `array` - All available options can be found on [here](http://docs.halon.se/hsl/functions.html?highlight=tlssocket#TLSSocket)
 
 ## ping()
 Check if the spamd server is alive.
