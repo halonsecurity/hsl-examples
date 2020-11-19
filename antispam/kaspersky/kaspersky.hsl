@@ -1,0 +1,58 @@
+function KasperskyAV($opts, $fp)
+{
+	$timeout = $opts["timeout"] ?? 2000;
+
+	$scanfile = $opts["host"] == "127.0.0.1" and $fp->getPath();
+	if ($scanfile)
+	{
+		$result = http($opts["host"].":".$opts["port"]."/scanfile",
+					[
+						"timeout" => $timeout / 1000,
+						"extended_result" => true,
+						"headers" => [
+								"Expect: ",
+								"Transfer-Encoding: ",
+								"X-KAV-ProtocolVersion: 1",
+								"X-KAV-Timeout: ".$timeout, 
+								"Content-Type: application/octet-stream",
+								"Connection: close"
+								]
+					], [],
+					$fp->getPath()
+				);
+	}
+	else
+	{
+		$length = $fp->seek(0, "SEEK_END");
+		$fp->seek(0, "SEEK_SET");
+		$result = http($opts["host"].":".$opts["port"]."/scanmemory",
+					[
+						"timeout" => $timeout / 1000,
+						"extended_result" => true,
+						"headers" => [
+								"Expect: ",
+								"Transfer-Encoding: ",
+								"X-KAV-ProtocolVersion: 1",
+								"X-KAV-Timeout: ".$timeout, 
+								"Content-Type: application/octet-stream",
+								"Connection: close",
+								"Content-Length:" .$length,
+								]
+					], [], function ($max) closure ($fp) {
+						return $fp->read($max);
+					}
+				);
+	}
+
+	if ($result["status"] != 200) {
+		echo "KasperskyAV error: ".$result["status"];
+		return;
+	}
+
+	[$scanResult, $detectionName] = str_split($result["content"], " ", 2);
+	$result = [];
+	$result["scanResult"] = $scanResult;
+	if ($detectionName)
+		$result["detectionName"] = $detectionName;
+	return $result;
+}
