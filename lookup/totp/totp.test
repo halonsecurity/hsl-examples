@@ -65,6 +65,7 @@ foreach (array_keys($time_token) as $time) {
 	$t = $time_token[$time]; // Expected token
 	// Validate token
 	echo TOTP(["secret" => $secret, "time" => $time, "token_length" => length($t)])->get_token() == $t;
+	echo TOTP(["secret" => base32_encode($secret), "time" => $time, "token_length" => length($t)])->get_token() == $t;
 	// Validate verify function (Window size)
 	echo TOTP(["secret" => $secret, "time" => $time - 2 * $windows_size, "token_length" => length($t)])->verify_token($t) == false;
 	echo TOTP(["secret" => $secret, "time" => $time - $windows_size, "token_length" => length($t)])->verify_token($t) == true;
@@ -72,3 +73,38 @@ foreach (array_keys($time_token) as $time) {
 	echo TOTP(["secret" => $secret, "time" => $time + $windows_size, "token_length" => length($t)])->verify_token($t) == true;
 	echo TOTP(["secret" => $secret, "time" => $time + 2 * $windows_size, "token_length" => length($t)])->verify_token($t) == false;
 }
+
+// Test time windows
+// Based on defaults of windows back+fowrard = 1
+$ww = 30;
+$token = "72403154";
+$t = 10 * $ww;
+// 1st second this window
+echo TOTP(["secret" => $secret, "time" => $t, "window_width_seconds" => $ww, "token_length" => 8])->get_token() == $token;
+echo TOTP(["secret" => $secret, "time" => $t, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == true;
+
+// Last second this window
+echo TOTP(["secret" => $secret, "time" => $t + $ww-1, "window_width_seconds" => $ww, "token_length" => 8])->get_token() == $token;
+echo TOTP(["secret" => $secret, "time" => $t + $ww-1, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == true;
+
+// Fist second of next window
+echo TOTP(["secret" => $secret, "time" => $t + $ww, "window_width_seconds" => $ww, "token_length" => 8])->get_token() != $token;
+echo TOTP(["secret" => $secret, "time" => $t + $ww, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == true;
+
+// Last second of next window
+echo TOTP(["secret" => $secret, "time" => $t + 2*$ww - 1, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == true;
+
+// 1st second ow window after next
+echo TOTP(["secret" => $secret, "time" => $t + 2*$ww, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == false;
+
+// Last second previous window
+echo TOTP(["secret" => $secret, "time" => $t-1, "window_width_seconds" => $ww, "token_length" => 8])->get_token() != $token;
+echo TOTP(["secret" => $secret, "time" => $t-1, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == true;
+
+// 1st second previous window
+echo TOTP(["secret" => $secret, "time" => $t-$ww, "window_width_seconds" => $ww, "token_length" => 8])->get_token() != $token;
+echo TOTP(["secret" => $secret, "time" => $t-$ww, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == true;
+
+// Last second 2 windows before
+echo TOTP(["secret" => $secret, "time" => $t-$ww-1, "window_width_seconds" => $ww, "token_length" => 8])->get_token() != $token;
+echo TOTP(["secret" => $secret, "time" => $t-$ww-1, "window_width_seconds" => $ww, "token_length" => 8])->verify_token($token) == false;
