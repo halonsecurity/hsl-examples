@@ -1,20 +1,74 @@
 include_once "file:totp";
 
-$time = 59;
-echo totp("12345678901234567890", ["digits" => 8]) == "94287082";
-$time = 1111111109;
-echo totp("12345678901234567890", ["digits" => 8]) == "07081804";
-$time = 1111111111;
-echo totp("12345678901234567890", ["digits" => 8]) == "14050471";
-$time = 1234567890;
-echo totp("12345678901234567890", ["digits" => 8]) == "89005924";
-$time = 2000000000;
-echo totp("12345678901234567890", ["digits" => 8]) == "69279037";
-$time = 20000000000;
-echo totp("12345678901234567890", ["digits" => 8]) == "65353130";
+$totp_object = TOTP();
 
-function time()
-{
-	global $time;
-	return $time;
+// Default secret is base32
+$secret_default = $totp_object->generate_random_secret();
+echo is_string(base32_decode($secret_default));
+
+// Default secret is base32
+$secret_base32 = $totp_object->generate_random_secret(["encode_to_base32" => true]);
+echo is_string(base32_decode($secret_base32));
+
+// Generate raw secret
+$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false]);
+echo not is_string(base32_decode($secret_raw));
+
+// Secret default length
+$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false]);
+echo length($secret_raw) == 64;
+
+// Secret valid length
+$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false, "secret_length" => 32]);
+echo length($secret_raw) == 32;
+
+// Secret invalid length
+$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false, "secret_length" => -1]);
+echo $secret_raw == false;
+echo is_boolean($secret_raw) and $secret_raw == false;
+
+// No secret specified creates base32 secret
+$totp_object = TOTP();
+echo is_string(base32_decode($totp_object->get_secret()));
+
+// Can get secret
+$my_secret = "foobar123";
+$totp_object = TOTP(["secret" => $my_secret]);
+echo $totp_object->get_secret() == $my_secret;
+
+// Token length
+echo "Test token length:";
+$default_token_length = 6;
+$max_token_length = 10;
+echo length(TOTP()->get_token()) == $default_token_length;
+echo length(TOTP(["token_length" => $max_token_length])->get_token()) == $max_token_length;
+echo length(TOTP(["token_length" => 1])->get_token()) == 1;
+echo length(TOTP(["token_length" => $max_token_length+1])->get_token()) == $default_token_length;
+echo length(TOTP(["token_length" => 0])->get_token()) == $default_token_length;
+echo length(TOTP(["token_length" => -1])->get_token()) == $default_token_length;
+
+
+// Token validity
+$time_token = [
+	59          => "94287082",
+	1111111109  => "07081804",
+	1111111111  => "14050471",
+	1234567890  => "89005924",
+	2000000000  => "69279037",
+	20000000000 => "65353130"
+
+];
+$secret = "12345678901234567890";
+$windows_size = 30;
+
+foreach (array_keys($time_token) as $time) {
+	$t = $time_token[$time]; // Expected token
+	// Validate token
+	echo TOTP(["secret" => $secret, "time" => $time, "token_length" => length($t)])->get_token() == $t;
+	// Validate verify function (Window size)
+	echo TOTP(["secret" => $secret, "time" => $time - 2 * $windows_size, "token_length" => length($t)])->verify_token($t) == false;
+	echo TOTP(["secret" => $secret, "time" => $time - $windows_size, "token_length" => length($t)])->verify_token($t) == true;
+	echo TOTP(["secret" => $secret, "time" => $time, "token_length" => length($t)])->verify_token($t) == true;
+	echo TOTP(["secret" => $secret, "time" => $time + $windows_size, "token_length" => length($t)])->verify_token($t) == true;
+	echo TOTP(["secret" => $secret, "time" => $time + 2 * $windows_size, "token_length" => length($t)])->verify_token($t) == false;
 }
