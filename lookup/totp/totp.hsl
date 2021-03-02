@@ -4,24 +4,24 @@ class TOTP {
 	private $default_token_length         = 6;
 	private $default_window_back          = 1;
 	private $default_window_forward       = 1;
-	private $default_window_width_seconds = 30;
+	private $default_window_width         = 30;
 	private $max_token_length             = 10;
 	private $default_is_base32            = true;
 
-	private $secret           		= none; // The secret used to generate a token
-	private $is_base32				= none;  // Is secret base32 encoded?
-	private $time             		= none; // The time used to generate the token
-	private $window_width_seconds   = none; // The step size to slice time, in seconds
-	private $window_back      		= none; // How many steps HOTP will go backwards to validate a token
-	private $window_forward   		= none; // How many steps HOTP will go forward to validate a token
-	private $token_length			= none; // Length of token
+	readonly $secret           		= none; // The secret used to generate a token
+	readonly $is_base32				= none;  // Is secret base32 encoded?
+	readonly $time             		= none; // The time used to generate the token
+	readonly $window_width          = none; // The step size to slice time, in seconds
+	readonly $window_back      		= none; // How many steps HOTP will go backwards to validate a token
+	readonly $window_forward   		= none; // How many steps HOTP will go forward to validate a token
+	readonly $token_length			= none; // Length of token
 
     constructor ($opts = []) {
 		$this->secret = $opts["secret"] ?? $this->generate_random_secret();
 		$this->is_base32 = $opts["is_base32"] ?? $this->default_is_base32;
 		$this->time = $opts["time"] ?? time(); // Seconds since epoch
 		$this->token_length = $opts["token_length"] ?? $this->default_token_length;
-		$this->window_width_seconds = $opts["window_width"] ?? $this->default_window_width_seconds;
+		$this->window_width = $opts["window_width"] ?? $this->default_window_width;
 		$this->window_back = $opts["window_back"] ?? $this->default_window_back;
 		$this->window_forward = $opts["window_forward"] ?? $this->default_window_forward;
 
@@ -46,9 +46,9 @@ class TOTP {
 			$this->window_forward = $this->default_window_forward;
 		}
 
-		// Enforce positive value for window_width_seconds
-		if ($this->window_width_seconds < 1) {
-			$this->window_width_seconds = $this->default_window_width_seconds;
+		// Enforce positive value for window width
+		if ($this->window_width < 1) {
+			$this->window_width = $this->default_window_width;
 		}
 
 		// Enforce positive value for time
@@ -89,7 +89,7 @@ class TOTP {
 	// Get a token based on secret and counter (Time)
 	function get_token($opts = []) {
 		// The counter to calculate the token from
-		$counter = $opts["counter"] ?? floor($this->time / $this->window_width_seconds);
+		$counter = $opts["counter"] ?? floor($this->time / $this->window_width);
 
 		// Length of token to generate
 		//$token_length = $opts["length"] ?? $this->default_token_length;
@@ -140,7 +140,7 @@ class TOTP {
 
 	function verify_token($token_to_verify) {
 		// Counter to use for verifying
-		$counter = floor($this->time / $this->window_width_seconds);
+		$counter = floor($this->time / $this->window_width);
 
 		// Do checks for all time slices
 		foreach (array_range(-1 * $this->window_back, $this->window_forward + 1) as $counter_offset) {
@@ -156,26 +156,6 @@ class TOTP {
 
 	function get_secret() {
 		return $this->secret;
-	}
-
-	function is_base32() {
-		return $this->is_base32;
-	}
-
-	function get_time() {
-		return $this->time;
-	}
-
-	function get_window_back() {
-		return $this->window_back;
-	}
-
-	function get_window_forward() {
-		return $this->window_forward;
-	}
-
-	function get_window_width() {
-		return $this->window_width_seconds;
 	}
 
 }

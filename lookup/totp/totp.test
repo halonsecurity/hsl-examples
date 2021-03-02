@@ -21,9 +21,9 @@ echo "Test: Secret unchanged";
 
 // Can get secret
 $my_secret = "foobar123";
-echo TOTP(["secret" => $my_secret])->get_secret() == $my_secret;
-echo TOTP(["secret" => $my_secret, "is_base32" => true])->get_secret() == $my_secret;
-echo TOTP(["secret" => $my_secret, "is_base32" => false])->get_secret() == $my_secret;
+echo TOTP(["secret" => $my_secret])->secret == $my_secret;
+echo TOTP(["secret" => $my_secret, "is_base32" => true])->secret == $my_secret;
+echo TOTP(["secret" => $my_secret, "is_base32" => false])->secret == $my_secret;
 
 
 echo "Test: Token length";
@@ -112,38 +112,38 @@ echo TOTP(["secret" => $secret, "time" => $t + $ww - 1, "window_back" => 0, "win
 echo "Test: Window settings";
 
 // Setting window_back
-echo TOTP(["window_back" => 0])->get_window_back() == 0;
-echo TOTP(["window_back" => 10])->get_window_back() == 10;
-echo TOTP()->get_window_back() == 1;
-echo TOTP(["window_back" => -5])->get_window_back() == 1;
+echo TOTP(["window_back" => 0])->window_back == 0;
+echo TOTP(["window_back" => 10])->window_back == 10;
+echo TOTP()->window_back == 1;
+echo TOTP(["window_back" => -5])->window_back == 1;
 
 // Setting window_forward
-echo TOTP(["window_forward" => 0])->get_window_forward() == 0;
-echo TOTP(["window_forward" => 10])->get_window_forward() == 10;
-echo TOTP()->get_window_forward() == 1;
-echo TOTP(["window_forward" => -5])->get_window_forward() == 1;
+echo TOTP(["window_forward" => 0])->window_forward == 0;
+echo TOTP(["window_forward" => 10])->window_forward == 10;
+echo TOTP()->window_forward == 1;
+echo TOTP(["window_forward" => -5])->window_forward == 1;
 
 // Window width
-echo TOTP(["window_width" => 10])->get_window_width() == 10;
-echo TOTP()->get_window_width() == 30;
-echo TOTP(["window_width" => -1])->get_window_width() == 30;
-echo TOTP(["window_width" => 0])->get_window_width() == 30;
+echo TOTP(["window_width" => 10])->window_width == 10;
+echo TOTP()->window_width == 30;
+echo TOTP(["window_width" => -1])->window_width == 30;
+echo TOTP(["window_width" => 0])->window_width == 30;
 
 
 echo "Test: Time";
 // Time
-echo TOTP(["time" => 1])->get_time() == 1;
-echo TOTP(["time" => 10.45])->get_time() == 10.45;
-echo floor(TOTP(["time" => 0.999])->get_time()) == floor(time());
-echo floor(TOTP(["time" => 0])->get_time()) == floor(time());
-echo floor(TOTP(["time" => -1])->get_time()) == floor(time());
-echo floor(TOTP()->get_time()) == floor(time());
+echo TOTP(["time" => 1])->time == 1;
+echo TOTP(["time" => 10.45])->time == 10.45;
+echo floor(TOTP(["time" => 0.999])->time) == floor(time());
+echo floor(TOTP(["time" => 0])->time) == floor(time());
+echo floor(TOTP(["time" => -1])->time) == floor(time());
+echo floor(TOTP()->time) == floor(time());
 
 // Base 32 encoding
 // Random secret is base32
-echo TOTP()->is_base32_secret() == true;
+echo TOTP()->is_base32 == true;
 // Random secret is always base32 encoded
-echo TOTP(["is_base32" => false])->is_base32_secret() == true;
-echo TOTP(["secret" => "foo", "is_base32" => false])->is_base32_secret() == false;
-echo TOTP(["secret" => "foo", "is_base32" => true])->is_base32_secret() == true;
-echo TOTP(["secret" => "foo"])->is_base32_secret() == true;
+echo TOTP(["is_base32" => false])->is_base32 == true;
+echo TOTP(["secret" => "foo", "is_base32" => false])->is_base32 == false;
+echo TOTP(["secret" => "foo", "is_base32" => true])->is_base32 == true;
+echo TOTP(["secret" => "foo"])->is_base32 == true;
