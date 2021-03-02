@@ -26,25 +26,25 @@ class TOTP {
 		$this->window_forward = $opts["window_forward"] ?? $this->default_window_forward;
 
 		// Enforce max length & non 0 length of token
-		// FIXME: Throw an error here?
 		if ($this->token_length > $this->max_token_length or $this->token_length < 1) {
 			$this->token_length = $this->default_token_length;
 		}
 
-		// Enforce non negative values for window_back
+		// Enforce non negative value for window_back
 		if ($this->window_back < 0) {
 			$this->window_back = $this->default_window_back;
 		}
 
-		// Enforce non negative values for window_forward
+		// Enforce non negative value for window_forward
 		if ($this->window_forward < 0) {
 			$this->window_forward = $this->default_window_forward;
 		}
 
-	}
+		// Enforce positive value for window_width_seconds
+		if ($this->window_width_seconds < 1) {
+			$this->window_width_seconds = $this->default_window_width_seconds;
+		}
 
-	function get_secret() {
-		return $this->secret;
 	}
 
 	function generate_random_secret ($opts = []) {
@@ -141,6 +141,26 @@ class TOTP {
 
 		// None of the tokens we tried matched.
 		return false;
+	}
+
+	function get_secret() {
+		return $this->secret;
+	}
+
+	function get_time() {
+		return $this->time;
+	}
+
+	function get_window_back() {
+		return $this->window_back;
+	}
+
+	function get_window_forward() {
+		return $this->window_forward;
+	}
+
+	function get_window_width() {
+		return $this->window_width_seconds;
 	}
 
 }
