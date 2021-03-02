@@ -45,6 +45,11 @@ class TOTP {
 			$this->window_width_seconds = $this->default_window_width_seconds;
 		}
 
+		// Enforce positive value for time
+		if ($this->time < 1) {
+			$this->time = time();
+		}
+
 	}
 
 	function generate_random_secret ($opts = []) {

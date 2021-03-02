@@ -133,3 +133,11 @@ echo TOTP(["window_width" => 10])->get_window_width() == 10;
 echo TOTP()->get_window_width() == 30;
 echo TOTP(["window_width" => -1])->get_window_width() == 30;
 echo TOTP(["window_width" => 0])->get_window_width() == 30;
+
+// Time
+echo TOTP(["time" => 1])->get_time() == 1;
+echo TOTP(["time" => 10.45])->get_time() == 10.45;
+echo floor(TOTP(["time" => 0.999])->get_time()) == floor(time());
+echo floor(TOTP(["time" => 0])->get_time()) == floor(time());
+echo floor(TOTP(["time" => -1])->get_time()) == floor(time());
+echo floor(TOTP()->get_time()) == floor(time());
