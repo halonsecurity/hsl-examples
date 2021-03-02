@@ -1,43 +1,34 @@
+//include_once "modules/totp.hsl";
 include_once "file:totp";
 
-$totp_object = TOTP();
 
-// Default secret is base32
-$secret_default = $totp_object->generate_random_secret();
-echo is_string(base32_decode($secret_default));
-
-// Default secret is base32
-$secret_base32 = $totp_object->generate_random_secret(["encode_to_base32" => true]);
-echo is_string(base32_decode($secret_base32));
-
-// Generate raw secret
-$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false]);
-echo not is_string(base32_decode($secret_raw));
+echo "Test: Generate secrets";
 
 // Secret default length
-$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false]);
-echo length($secret_raw) == 64;
+echo length(TOTP()->generate_random_secret(["encode_to_base32" => false])) == 64;
 
 // Secret valid length
-$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false, "secret_length" => 32]);
+$secret_raw = TOTP()->generate_random_secret(["encode_to_base32" => false, "secret_length" => 32]);
 echo length($secret_raw) == 32;
 
 // Secret invalid length
-$secret_raw = $totp_object->generate_random_secret(["encode_to_base32" => false, "secret_length" => -1]);
+$secret_raw = TOTP()->generate_random_secret(["encode_to_base32" => false, "secret_length" => -1]);
 echo $secret_raw == false;
 echo is_boolean($secret_raw) and $secret_raw == false;
 
-// No secret specified creates base32 secret
-$totp_object = TOTP();
-echo is_string(base32_decode($totp_object->get_secret()));
+
+echo "Test: Secret unchanged";
 
 // Can get secret
 $my_secret = "foobar123";
-$totp_object = TOTP(["secret" => $my_secret]);
-echo $totp_object->get_secret() == $my_secret;
+echo TOTP(["secret" => $my_secret])->get_secret() == $my_secret;
+echo TOTP(["secret" => $my_secret, "is_base32" => true])->get_secret() == $my_secret;
+echo TOTP(["secret" => $my_secret, "is_base32" => false])->get_secret() == $my_secret;
+
+
+echo "Test: Token length";
 
 // Token length
-echo "Test token length:";
 $default_token_length = 6;
 $max_token_length = 10;
 echo length(TOTP()->get_token()) == $default_token_length;
@@ -47,9 +38,9 @@ echo length(TOTP(["token_length" => $max_token_length+1])->get_token()) == $defa
 echo length(TOTP(["token_length" => 0])->get_token()) == $default_token_length;
 echo length(TOTP(["token_length" => -1])->get_token()) == $default_token_length;
 
+echo "Test: TOTP";
 
 // Token validity
-// Add 
 $time_token = [
 	59          => "94287082",
 	1111111109  => "07081804",
@@ -74,6 +65,7 @@ foreach (array_keys($time_token) as $time) {
 	echo TOTP(["secret" => $s_b32, "time" => $time, "token_length" => length($t)])->get_token() == $t;
 }
 
+echo "Test: Verify token";
 // Test time windows
 // Based on defaults of windows back+forward = 1
 $ww = 30; // Window width
@@ -116,6 +108,9 @@ echo TOTP(["secret" => $secret, "time" => $t + $ww, "window_back" => 0, "window_
 echo TOTP(["secret" => $secret, "time" => $t, "window_back" => 0, "window_forward" => 0, "window_width_seconds" => $ww, "token_length" => length($token)])->verify_token($token) == true;
 echo TOTP(["secret" => $secret, "time" => $t + $ww - 1, "window_back" => 0, "window_forward" => 0, "window_width_seconds" => $ww, "token_length" => length($token)])->verify_token($token) == true;
 
+
+echo "Test: Window settings";
+
 // Setting window_back
 echo TOTP(["window_back" => 0])->get_window_back() == 0;
 echo TOTP(["window_back" => 10])->get_window_back() == 10;
@@ -134,6 +129,8 @@ echo TOTP()->get_window_width() == 30;
 echo TOTP(["window_width" => -1])->get_window_width() == 30;
 echo TOTP(["window_width" => 0])->get_window_width() == 30;
 
+
+echo "Test: Time";
 // Time
 echo TOTP(["time" => 1])->get_time() == 1;
 echo TOTP(["time" => 10.45])->get_time() == 10.45;
@@ -141,3 +138,12 @@ echo floor(TOTP(["time" => 0.999])->get_time()) == floor(time());
 echo floor(TOTP(["time" => 0])->get_time()) == floor(time());
 echo floor(TOTP(["time" => -1])->get_time()) == floor(time());
 echo floor(TOTP()->get_time()) == floor(time());
+
+// Base 32 encoding
+// Random secret is base32
+echo TOTP()->is_base32_secret() == true;
+// Random secret is always base32 encoded
+echo TOTP(["is_base32" => false])->is_base32_secret() == true;
+echo TOTP(["secret" => "foo", "is_base32" => false])->is_base32_secret() == false;
+echo TOTP(["secret" => "foo", "is_base32" => true])->is_base32_secret() == true;
+echo TOTP(["secret" => "foo"])->is_base32_secret() == true;

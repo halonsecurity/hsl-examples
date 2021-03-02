@@ -25,6 +25,12 @@ class TOTP {
 		$this->window_back = $opts["window_back"] ?? $this->default_window_back;
 		$this->window_forward = $opts["window_forward"] ?? $this->default_window_forward;
 
+		// Use random base32 encoded secret, if secret not supplied
+		if (not $opts["secret"]) {
+			$this->generate_random_secret();
+			$this->is_base32 = true;
+		}
+
 		// Enforce max length & non 0 length of token
 		if ($this->token_length > $this->max_token_length or $this->token_length < 1) {
 			$this->token_length = $this->default_token_length;
@@ -150,6 +156,10 @@ class TOTP {
 
 	function get_secret() {
 		return $this->secret;
+	}
+
+	function is_base32() {
+		return $this->is_base32;
 	}
 
 	function get_time() {
