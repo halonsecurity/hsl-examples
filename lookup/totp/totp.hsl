@@ -6,8 +6,10 @@ class TOTP {
 	private $default_window_forward       = 1;
 	private $default_window_width_seconds = 30;
 	private $max_token_length             = 10;
+	private $default_is_base32            = true;
 
 	private $secret           		= none; // The secret used to generate a token
+	private $is_base32				= none;  // Is secret base32 encoded?
 	private $time             		= none; // The time used to generate the token
 	private $window_width_seconds   = none; // The step size to slice time, in seconds
 	private $window_back      		= none; // How many steps HOTP will go backwards to validate a token
@@ -16,8 +18,7 @@ class TOTP {
 
     constructor ($opts = []) {
 		$this->secret = $opts["secret"] ?? $this->generate_random_secret();
-		//$this->secret = $secret ?? $this->generate_random_secret();
-		//$this->is_base32_secret = $opts["is_base32_secret"] ?? true;
+		$this->is_base32 = $opts["is_base32"] ?? $this->default_is_base32;
 		$this->time = $opts["time"] ?? time(); // Seconds since epoch
 		$this->token_length = $opts["token_length"] ?? $this->default_token_length;
 		$this->window_width_seconds = $opts["window_width"] ?? $this->default_window_width_seconds;
@@ -28,6 +29,16 @@ class TOTP {
 		// FIXME: Throw an error here?
 		if ($this->token_length > $this->max_token_length or $this->token_length < 1) {
 			$this->token_length = $this->default_token_length;
+		}
+
+		// Enforce non negative values for window_back
+		if ($this->window_back < 0) {
+			$this->window_back = $this->default_window_back;
+		}
+
+		// Enforce non negative values for window_forward
+		if ($this->window_forward < 0) {
+			$this->window_forward = $this->default_window_forward;
 		}
 
 	}
@@ -75,8 +86,9 @@ class TOTP {
 
 
 		// Decode secret if base32 encoded
-		$secret_raw = base32_decode($this->secret);
-		if (not $secret_raw) {
+		if ($this->is_base32) {
+			$secret_raw = base32_decode($this->secret);
+		} else {
 			$secret_raw = $this->secret;
 		}
 
@@ -118,8 +130,6 @@ class TOTP {
 	function verify_token($token_to_verify) {
 		// Counter to use for verifying
 		$counter = floor($this->time / $this->window_width_seconds);
-
-		// Return false for invalid length!
 
 		// Do checks for all time slices
 		foreach (array_range(-1 * $this->window_back, $this->window_forward + 1) as $counter_offset) {
