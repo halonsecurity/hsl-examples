@@ -4,17 +4,8 @@ include_once "file:totp";
 
 echo "Test: Generate secrets";
 
-// Secret default length
-echo length(TOTP()->generate_random_secret(["encode_to_base32" => false])) == 64;
-
-// Secret valid length
-$secret_raw = TOTP()->generate_random_secret(["encode_to_base32" => false, "secret_length" => 32]);
-echo length($secret_raw) == 32;
-
-// Secret invalid length
-$secret_raw = TOTP()->generate_random_secret(["encode_to_base32" => false, "secret_length" => -1]);
-echo $secret_raw == false;
-echo is_boolean($secret_raw) and $secret_raw == false;
+// Random secret default length
+echo length(base32_decode(TOTP()->secret)) == 64;
 
 
 echo "Test: Secret unchanged";
