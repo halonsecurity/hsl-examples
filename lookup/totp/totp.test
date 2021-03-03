@@ -38,7 +38,7 @@ echo length(TOTP(["token_length" => $max_token_length+1])->get_token()) == $defa
 echo length(TOTP(["token_length" => 0])->get_token()) == $default_token_length;
 echo length(TOTP(["token_length" => -1])->get_token()) == $default_token_length;
 
-echo "Test: TOTP";
+echo "Test: TOTP1";
 
 // Token validity
 $time_token = [
@@ -51,7 +51,6 @@ $time_token = [
 ];
 $s_raw = "12345678901234567890";
 $s_b32 = base32_encode($s_raw);
-$windows_size = 30;
 
 foreach (array_keys($time_token) as $time) {
 	$t = $time_token[$time]; // Expected token
@@ -64,6 +63,35 @@ foreach (array_keys($time_token) as $time) {
 	// Encoded secret as base32
 	echo TOTP(["secret" => $s_b32, "time" => $time, "token_length" => length($t)])->get_token() == $t;
 }
+
+echo "Test: TOTP2";
+// Found more test data https://github.com/hgfischer/go-otp/blob/master/totp_test.go
+
+// Token validity
+$time_token = [
+	59          => "41996554",
+	1111111109  => "33071271",
+	1111111111  => "28358462",
+	1234567890  => "94742275",
+	2000000000  => "28890699",
+	20000000000 => "94752434"
+];
+$s_b32 = "JBSWY3DPEHPK3PXP";
+$s_raw = base32_decode($s_b32);
+
+foreach (array_keys($time_token) as $time) {
+	$t = $time_token[$time]; // Expected token
+	// Raw secret as base32
+	echo TOTP(["secret" => $s_raw, "time" => $time, "token_length" => length($t)])->get_token() != $t;
+	// Raw secret as non base32
+	echo TOTP(["secret" => $s_raw, "time" => $time, "is_base32" => false, "token_length" => length($t)])->get_token() == $t;
+	// Encoded secret as raw
+	echo TOTP(["secret" => $s_b32, "time" => $time, "is_base32" => false, "token_length" => length($t)])->get_token() != $t;
+	// Encoded secret as base32
+	echo TOTP(["secret" => $s_b32, "time" => $time, "token_length" => length($t)])->get_token() == $t;
+}
+
+
 
 echo "Test: Verify token";
 // Test time windows
@@ -138,6 +166,9 @@ echo floor(TOTP(["time" => 0.999])->time) == floor(time());
 echo floor(TOTP(["time" => 0])->time) == floor(time());
 echo floor(TOTP(["time" => -1])->time) == floor(time());
 echo floor(TOTP()->time) == floor(time());
+
+
+echo "Test: Base32";
 
 // Base 32 encoding
 // Random secret is base32
