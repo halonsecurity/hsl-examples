@@ -1,12 +1,12 @@
 class TOTP {
 	
 	// Default values
-	private static $default_token_length         = 6;
-	private static $default_window_back          = 1;
-	private static $default_window_forward       = 1;
-	private static $default_window_width         = 30;
-	private static $max_token_length             = 10;
-	private static $default_is_base32            = true;
+	private $default_token_length         = 6;
+	private $default_window_back          = 1;
+	private $default_window_forward       = 1;
+	private $default_window_width         = 30;
+	private $max_token_length             = 10;
+	private $default_is_base32            = true;
 
 	readonly $secret           		= none; // The secret used to generate a token
 	readonly $is_base32				= none;  // Is secret base32 encoded?
