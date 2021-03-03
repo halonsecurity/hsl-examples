@@ -88,9 +88,11 @@ class TOTP {
 	}
 
 	// Get a token based on secret and counter (Time)
-	function get_token($counter = none) {
+	function get_token($c = none) {
 		// The counter to calculate the token from
-		if (not $counter) {
+		if (is_number($c) and $c > 0) {
+			$counter = $c;
+		} else {
 			$counter = floor($this->time / $this->window_width);
 		}
 
@@ -147,7 +149,7 @@ class TOTP {
 		// Do checks for all time slices
 		foreach (array_range(-1 * $this->window_back, $this->window_forward + 1) as $counter_offset) {
 			// Accept if token to verify matched what we generated
-			if ($this->get_token(["counter" => $counter + $counter_offset]) == $token_to_verify) {
+			if ($this->get_token($counter + $counter_offset) == $token_to_verify) {
 				return true;
 			}
 		}
