@@ -88,12 +88,13 @@ class TOTP {
 	}
 
 	// Get a token based on secret and counter (Time)
-	function get_token($opts = []) {
+	function get_token($counter = none) {
 		// The counter to calculate the token from
-		$counter = $opts["counter"] ?? floor($this->time / $this->window_width);
+		if (not $counter) {
+			$counter = floor($this->time / $this->window_width);
+		}
 
 		// Length of token to generate
-		//$token_length = $opts["length"] ?? $this->default_token_length;
 		$token_length = $this->token_length;
 
 
