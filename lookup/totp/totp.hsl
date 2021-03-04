@@ -131,7 +131,8 @@ class TOTP {
         return $token;
     }
 
-    function verify_token($token_to_verify) {
+    function verify_token($token_to_verify = "") {
+
         // Counter to use for verifying
         $counter = floor($this->time / $this->window_width);
 

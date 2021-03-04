@@ -31,6 +31,9 @@ echo length(TOTP(["token_length" => -1])->get_token()) == $default_token_length;
 
 echo "Test: TOTP1";
 
+// No token is invalid token
+echo TOTP(["secret" => "foo"])->verify_token() == false;
+
 // Token validity
 $time_token = [
 	59          => "94287082",
@@ -43,6 +46,7 @@ $time_token = [
 $s_raw = "12345678901234567890";
 $s_b32 = base32_encode($s_raw);
 
+// FIXME: Use entries()
 foreach (array_keys($time_token) as $time) {
 	$t = $time_token[$time]; // Expected token
 	// Raw secret as base32
