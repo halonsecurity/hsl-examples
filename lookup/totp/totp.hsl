@@ -1,161 +1,161 @@
 class TOTP {
-	
-	// Default values
-	private $default_token_length         = 6;
-	private $default_window_back          = 1;
-	private $default_window_forward       = 1;
-	private $default_window_width         = 30;
-	private $default_random_secret_length = 64;
-	private $max_token_length             = 10;
-	private $default_is_base32            = true;
 
-	readonly $secret           		= none; // The secret used to generate a token
-	readonly $is_base32				= none;  // Is secret base32 encoded?
-	readonly $time             		= none; // The time used to generate the token
-	readonly $window_width          = none; // The step size to slice time, in seconds
-	readonly $window_back      		= none; // How many steps HOTP will go backwards to validate a token
-	readonly $window_forward   		= none; // How many steps HOTP will go forward to validate a token
-	readonly $token_length			= none; // Length of token
+    // Default values
+    private $default_token_length         = 6;
+    private $default_window_back          = 1;
+    private $default_window_forward       = 1;
+    private $default_window_width         = 30;
+    private $default_random_secret_length = 64;
+    private $max_token_length             = 10;
+    private $default_is_base32            = true;
+
+    readonly $secret         = none; // The secret used to generate a token
+    readonly $is_base32      = none; // Is secret base32 encoded?
+    readonly $time           = none; // The time used to generate the token
+    readonly $window_width   = none; // The step size to slice time, in seconds
+    readonly $window_back    = none; // How many steps HOTP will go backwards to validate a token
+    readonly $window_forward = none; // How many steps HOTP will go forward to validate a token
+    readonly $token_length   = none; // Length of token
 
     constructor ($opts = []) {
-		$this->secret = $opts["secret"] ?? $this->generate_random_secret();
-		$this->is_base32 = $opts["is_base32"] ?? $this->default_is_base32;
-		$this->time = $opts["time"] ?? time(); // Seconds since epoch
-		$this->token_length = $opts["token_length"] ?? $this->default_token_length;
-		$this->window_width = $opts["window_width"] ?? $this->default_window_width;
-		$this->window_back = $opts["window_back"] ?? $this->default_window_back;
-		$this->window_forward = $opts["window_forward"] ?? $this->default_window_forward;
+        $this->secret = $opts["secret"] ?? $this->generate_random_secret();
+        $this->is_base32 = $opts["is_base32"] ?? $this->default_is_base32;
+        $this->time = $opts["time"] ?? time(); // Seconds since epoch
+        $this->token_length = $opts["token_length"] ?? $this->default_token_length;
+        $this->window_width = $opts["window_width"] ?? $this->default_window_width;
+        $this->window_back = $opts["window_back"] ?? $this->default_window_back;
+        $this->window_forward = $opts["window_forward"] ?? $this->default_window_forward;
 
-		// Use random base32 encoded secret, if secret not supplied
-		if (not $opts["secret"]) {
-			$this->generate_random_secret();
-			$this->is_base32 = true;
-		}
+        // Use random base32 encoded secret, if secret not supplied
+        if (not $opts["secret"]) {
+            $this->generate_random_secret();
+            $this->is_base32 = true;
+        }
 
-		// Enforce max length & non 0 length of token
-		if ($this->token_length > $this->max_token_length or $this->token_length < 1) {
-			$this->token_length = $this->default_token_length;
-		}
+        // Enforce max length & non 0 length of token
+        if ($this->token_length > $this->max_token_length or $this->token_length < 1) {
+            $this->token_length = $this->default_token_length;
+        }
 
-		// Enforce non negative value for window_back
-		if ($this->window_back < 0) {
-			$this->window_back = $this->default_window_back;
-		}
+        // Enforce non negative value for window_back
+        if ($this->window_back < 0) {
+            $this->window_back = $this->default_window_back;
+        }
 
-		// Enforce non negative value for window_forward
-		if ($this->window_forward < 0) {
-			$this->window_forward = $this->default_window_forward;
-		}
+        // Enforce non negative value for window_forward
+        if ($this->window_forward < 0) {
+            $this->window_forward = $this->default_window_forward;
+        }
 
-		// Enforce positive value for window width
-		if ($this->window_width < 1) {
-			$this->window_width = $this->default_window_width;
-		}
+        // Enforce positive value for window width
+        if ($this->window_width < 1) {
+            $this->window_width = $this->default_window_width;
+        }
 
-		// Enforce positive value for time
-		if ($this->time < 1) {
-			$this->time = time();
-		}
+        // Enforce positive value for time
+        if ($this->time < 1) {
+            $this->time = time();
+        }
 
-	}
+    }
 
-	private function generate_random_secret ($opts = []) {
-		$secret_length = $opts["secret_length"] ?? $this->default_random_secret_length;
-		$encode_to_base32 = $opts["encode_to_base32"] ?? true;
+    private function generate_random_secret ($opts = []) {
+        $secret_length = $opts["secret_length"] ?? $this->default_random_secret_length;
+        $encode_to_base32 = $opts["encode_to_base32"] ?? true;
 
-		// Length must be positive
-		if ($secret_length < 1) {
-			return $this->default_random_secret_length;
-		}
+        // Length must be positive
+        if ($secret_length < 1) {
+            return $this->default_random_secret_length;
+        }
 
-		// Characters available for secret
-		$chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        // Characters available for secret
+        $chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-		// Build secret
-		$random_secret = "";
-		while (length($random_secret) < $secret_length) {
-			// Add a random character to secret
-			$random_secret .= $chars[random_number(0, length($chars)-1)];
-		}
+        // Build secret
+        $random_secret = "";
+        while (length($random_secret) < $secret_length) {
+            // Add a random character to secret
+            $random_secret .= $chars[random_number(0, length($chars)-1)];
+        }
 
-		// Return secret
-		if ($encode_to_base32) {
-			return base32_encode($random_secret);
-		} else {
-			return $random_secret;
-		}
+        // Return secret
+        if ($encode_to_base32) {
+            return base32_encode($random_secret);
+        } else {
+            return $random_secret;
+        }
 
-	}
+    }
 
-	// Get a token based on secret and counter (Time)
-	function get_token($c = none) {
-		// The counter to calculate the token from
-		if (is_number($c) and $c > 0) {
-			$counter = $c;
-		} else {
-			$counter = floor($this->time / $this->window_width);
-		}
+    // Get a token based on secret and counter (Time)
+    function get_token($c = none) {
+        // The counter to calculate the token from
+        if (is_number($c) and $c > 0) {
+            $counter = $c;
+        } else {
+            $counter = floor($this->time / $this->window_width);
+        }
 
-		// Length of token to generate
-		$token_length = $this->token_length;
+        // Length of token to generate
+        $token_length = $this->token_length;
 
 
-		// Decode secret if base32 encoded
-		if ($this->is_base32) {
-			$secret_raw = base32_decode($this->secret);
-		} else {
-			$secret_raw = $this->secret;
-		}
+        // Decode secret if base32 encoded
+        if ($this->is_base32) {
+            $secret_raw = base32_decode($this->secret);
+        } else {
+            $secret_raw = $this->secret;
+        }
 
-		// Counter needs to be 8 bytes as per RFC.
-		// 0 as a 32 bits unsigned (4 bytes) + counter as 32 bit unsigned (4 bytes).
-		$counter_bytes = pack("N", 0).pack("N", $counter);
+        // Counter needs to be 8 bytes as per RFC.
+        // 0 as a 32 bits unsigned (4 bytes) + counter as 32 bit unsigned (4 bytes).
+        $counter_bytes = pack("N", 0).pack("N", $counter);
 
-		// Create a 20 byte hash of secret & counter
-		// Hash is represented in hex, so we have 40 hex
-		// values in the string representation
-		$hash = hmac_sha1($secret_raw, $counter_bytes);
+        // Create a 20 byte hash of secret & counter
+        // Hash is represented in hex, so we have 40 hex
+        // values in the string representation
+        $hash = hmac_sha1($secret_raw, $counter_bytes);
 
-		// Last two hex values (Last byte) of hash as a char
-		$offset_bytes = (unpack("C", pack("H2", $hash[-2:])))[0];
-		// Clear first 4 bits. We now have a value between 0 and 15 (Base 10)
-		$offset_bytes = $offset_bytes & 0x0F;
+        // Last two hex values (Last byte) of hash as a char
+        $offset_bytes = (unpack("C", pack("H2", $hash[-2:])))[0];
+        // Clear first 4 bits. We now have a value between 0 and 15 (Base 10)
+        $offset_bytes = $offset_bytes & 0x0F;
 
-		// The offset is in bytes, but we need hex because the
-		// hash is 40 hex values (Representing 20 bytes).
-		// Let's make an offset for our hex representation.
-		$offset_hex = $offset_bytes * 2;
+        // The offset is in bytes, but we need hex because the
+        // hash is 40 hex values (Representing 20 bytes).
+        // Let's make an offset for our hex representation.
+        $offset_hex = $offset_bytes * 2;
 
-		// Get 4 bytes = 8 hex values = 32 bits starting from offset.
-		// N = a 32 unsigned big endian
-		$truncated_hash = unpack("N", pack("H*", $hash[$offset_hex:$offset_hex + 8]))[0];
-		// Only keep the least significant 31 bits
-		$truncated_hash = $truncated_hash & 0x7FFFFFFF;
+        // Get 4 bytes = 8 hex values = 32 bits starting from offset.
+        // N = a 32 unsigned big endian
+        $truncated_hash = unpack("N", pack("H*", $hash[$offset_hex:$offset_hex + 8]))[0];
+        // Only keep the least significant 31 bits
+        $truncated_hash = $truncated_hash & 0x7FFFFFFF;
 
-		// Calculate numeric value of token
-		$token_value = $truncated_hash % (10 ** $token_length);
+        // Calculate numeric value of token
+        $token_value = $truncated_hash % (10 ** $token_length);
 
-		// Pad the numeric value of token with 0's to get the needed length
-		$token = ("%'0>".$token_length."s") % [ $token_value ];
+        // Pad the numeric value of token with 0's to get the needed length
+        $token = ("%'0>".$token_length."s") % [ $token_value ];
 
-		// Return token
-		return $token;
-	}
+        // Return token
+        return $token;
+    }
 
-	function verify_token($token_to_verify) {
-		// Counter to use for verifying
-		$counter = floor($this->time / $this->window_width);
+    function verify_token($token_to_verify) {
+        // Counter to use for verifying
+        $counter = floor($this->time / $this->window_width);
 
-		// Do checks for all time slices
-		foreach (array_range(-1 * $this->window_back, $this->window_forward + 1) as $counter_offset) {
-			// Accept if token to verify matched what we generated
-			if ($this->get_token($counter + $counter_offset) == $token_to_verify) {
-				return true;
-			}
-		}
+        // Do checks for all time slices
+        foreach (array_range(-1 * $this->window_back, $this->window_forward + 1) as $counter_offset) {
+            // Accept if token to verify matched what we generated
+            if ($this->get_token($counter + $counter_offset) == $token_to_verify) {
+                return true;
+            }
+        }
 
-		// None of the tokens we tried matched.
-		return false;
-	}
+        // None of the tokens we tried matched.
+        return false;
+    }
 
 }
