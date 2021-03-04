@@ -21,7 +21,7 @@ $base32_encoded_user_secret = base32_encode("the-secret-to-use");
 
 $TOTP = TOTP(["secret" => $base32_encoded_user_secret]);
 
-if ($TOTP->validate_token($user_token)) {
+if ($TOTP->verify_token($user_token)) {
   echo "User authenticated";
 }
 ```
@@ -32,7 +32,7 @@ $raw_user_secret = "the-secret-to-use";
 
 $TOTP = TOTP(["secret" => $raw_user_secret, "is_base32" = false]);
 
-if ($TOTP->validate_token($user_token)) {
+if ($TOTP->verify_token($user_token)) {
   echo "User authenticated";
 }
 ```
@@ -61,8 +61,8 @@ The TOTP constructor has these optional arguments:
 * *is_base32*: Is the secret encoded as base32?. (Default: *true*).
 * *time*: The time (As seconds since epoch) to validate tokens for. (Default: The time of TOTP object instantiation).
 * *window_width*: The width of a slice of time in seconds. (Default: *30*).
-* *window_back*: How many slices of time, before the current, to verify a token for with *validate_token()* . (Default: *1*).
-* *window_forward*: How many slices of time, after the current, to verify a token for with *validate_token()* . (Default: *1*)
+* *window_back*: How many slices of time, before the current, to verify a token for with *verify_token()* . (Default: *1*).
+* *window_forward*: How many slices of time, after the current, to verify a token for with *verify_token()* . (Default: *1*)
 
 An example of instantiating a *TOTP* object with secret *"my_secret"*, and all
 other arguments explicitly set to their defaults:
