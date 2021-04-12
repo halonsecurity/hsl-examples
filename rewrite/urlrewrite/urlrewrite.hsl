@@ -13,7 +13,7 @@ foreach (
 
 	if ($a->getType() == "text/html")
 	{
-		$urldata = pcre_replace(''/<a[^>]*?(href\s*=\s*((?<quote>['"])(?<href>(?:.|\n)+?)(?&quote)|(?<href2>[^\s>]+)))[^>]*?>/i'', function ($f) closure ($rewriteurl) {
+		$urldata = pcre_replace(''/<a[^>]*?(href\s*=\s*((?<quote>['"])(?<href>.+?)(?&quote)|(?<href2>[^\s>]+)))[^>]*?>/is'', function ($f) closure ($rewriteurl) {
 				$url = $f[4] ?: $f[5];
 				if (str_slice($url, 0, length($rewriteurl)) == $rewriteurl)
 					return $f[0];
